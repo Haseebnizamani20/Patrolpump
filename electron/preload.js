@@ -1,0 +1,8 @@
+const { contextBridge } = require('electron');
+
+// Expose a minimal API to the renderer process
+// Additional APIs will be added as needed in later phases
+contextBridge.exposeInMainWorld('electronAPI', {
+  platform: process.platform,
+  isElectron: true,
+});

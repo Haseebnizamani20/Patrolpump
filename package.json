@@ -1,0 +1,19 @@
+{
+  "name": "diesel-pump-app",
+  "version": "1.0.0",
+  "description": "Diesel Pump Management System — offline desktop app for pump owners",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "server": "cd server && node server.js",
+    "client": "cd client && npm run dev",
+    "electron": "electron .",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "concurrently \"npm run server\" \"npm run client\" \"wait-on http://localhost:5173 && npm run electron\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.1.0",
+    "wait-on": "^7.2.0"
+  }
+}
