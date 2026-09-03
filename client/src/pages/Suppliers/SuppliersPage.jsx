@@ -16,7 +16,7 @@ const SuppliersPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/suppliers');
-      setSuppliers(response.data);
+      setSuppliers(response.data.data);
     } catch (error) {
       message.error('Failed to fetch suppliers');
     } finally {
@@ -86,7 +86,7 @@ const SuppliersPage = () => {
       key: 'gstNumber',
     },
     {
-      title: 'Outstanding Payable (₹)',
+      title: 'Outstanding Payable (Rs)',
       dataIndex: 'outstandingPayable',
       key: 'outstandingPayable',
       render: (val) => val?.toLocaleString() || 0,

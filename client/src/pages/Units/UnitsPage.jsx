@@ -16,7 +16,7 @@ const UnitsPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/units');
-      setUnits(response.data);
+      setUnits(response.data.data);
     } catch (error) {
       message.error('Failed to fetch units');
     } finally {
@@ -89,7 +89,7 @@ const UnitsPage = () => {
       render: (val) => val?.toLocaleString() || 0,
     },
     {
-      title: 'Avg Cost (₹/L)',
+      title: 'Avg Cost (Rs/L)',
       dataIndex: 'avgCost',
       key: 'avgCost',
       render: (val) => val?.toFixed(2) || '0.00',

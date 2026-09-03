@@ -10,6 +10,14 @@ import CustomersPage from './pages/Customers/CustomersPage';
 import SuppliersPage from './pages/Suppliers/SuppliersPage';
 import PurchasePage from './pages/Purchase/PurchasePage';
 import SalePage from './pages/Sale/SalePage';
+import PaymentsPage from './pages/Payments/PaymentsPage';
+import ExpensesPage from './pages/Expenses/ExpensesPage';
+import CashSessionPage from './pages/CashSession/CashSessionPage';
+import ReportsPage from './pages/Reports/ReportsPage';
+import SupplierPaymentsPage from './pages/SupplierPayments/SupplierPaymentsPage';
+import AuditLogPage from './pages/AuditLog/AuditLogPage';
+import UsersPage from './pages/Users/UsersPage';
+import BackupPage from './pages/Backup/BackupPage';
 import SetupPage from './pages/Setup/SetupPage';
 import StockAdjustmentPage from './pages/Stock/StockAdjustmentPage';
 import './App.css';
@@ -28,6 +36,42 @@ const AppRoutes = () => {
         <Route path="/suppliers" element={<SuppliersPage />} />
         <Route path="/purchases" element={<PurchasePage />} />
         <Route path="/sales" element={<SalePage />} />
+        <Route path="/payments" element={<PaymentsPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route path="/cash-session" element={<CashSessionPage />} />
+        <Route path="/supplier-payments" element={<SupplierPaymentsPage />} />
+        <Route
+          path="/audit-log"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <AuditLogPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/backup"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <BackupPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/stock-adjustments"
           element={

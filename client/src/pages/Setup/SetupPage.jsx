@@ -98,7 +98,7 @@ const SetupPage = () => {
       )
     },
     { 
-      title: 'Average Cost (₹/L)', 
+      title: 'Average Cost (Rs/L)',
       key: 'cost',
       render: (_, record) => (
         <Form.Item name={['units', record._id, 'avgCost']} initialValue={0} noStyle>
@@ -112,7 +112,7 @@ const SetupPage = () => {
     { title: 'Customer Name', dataIndex: 'name', key: 'name' },
     { title: 'Phone', dataIndex: 'phone', key: 'phone' },
     { 
-      title: 'Opening Balance (₹)', 
+      title: 'Opening Balance (Rs)',
       key: 'balance',
       render: (_, record) => (
         <Form.Item name={['customers', record._id, 'openingBalance']} initialValue={0} noStyle>

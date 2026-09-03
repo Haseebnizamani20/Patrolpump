@@ -163,12 +163,12 @@ const PurchasePage = () => {
       key: 'quantity',
     },
     {
-      title: 'Rate (₹/L)',
+      title: 'Rate (Rs/L)',
       dataIndex: 'rate',
       key: 'rate',
     },
     {
-      title: 'Amount (₹)',
+      title: 'Amount (Rs)',
       dataIndex: 'amount',
       key: 'amount',
     },
@@ -276,7 +276,7 @@ const PurchasePage = () => {
 
             <Form.Item
               name="rate"
-              label="Rate (₹/Liter)"
+              label="Rate (Rs/Liter)"
               rules={[{ required: true, message: 'Please enter rate' }]}
               style={{ flex: 1 }}
             >
@@ -285,7 +285,7 @@ const PurchasePage = () => {
 
             <Form.Item
               name="amount"
-              label="Total Amount (₹)"
+              label="Total Amount (Rs)"
               style={{ flex: 1 }}
             >
               <InputNumber style={{ width: '100%' }} disabled />
@@ -307,7 +307,7 @@ const PurchasePage = () => {
           {paymentStatus === 'Partial' && (
             <Form.Item
               name="amountPaid"
-              label="Amount Paid (₹)"
+              label="Amount Paid (Rs)"
               rules={[{ required: true, message: 'Please enter amount paid' }]}
             >
               <InputNumber style={{ width: '100%' }} min={0.01} max={form.getFieldValue('amount')} />

@@ -19,7 +19,7 @@ const CustomersPage = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/customers');
-      setCustomers(response.data);
+      setCustomers(response.data.data);
     } catch (error) {
       message.error('Failed to fetch customers');
     } finally {
@@ -95,13 +95,13 @@ const CustomersPage = () => {
       ),
     },
     {
-      title: 'Credit Limit (₹)',
+      title: 'Credit Limit (Rs)',
       dataIndex: 'creditLimit',
       key: 'creditLimit',
       render: (val, record) => record.type === 'credit' ? (val?.toLocaleString() || 0) : '-',
     },
     {
-      title: 'Current Balance (₹)',
+      title: 'Current Balance (Rs)',
       dataIndex: 'currentBalance',
       key: 'currentBalance',
       render: (val, record) => {
@@ -192,14 +192,14 @@ const CustomersPage = () => {
             <>
               <Form.Item
                 name="creditLimit"
-                label="Credit Limit (₹)"
+                label="Credit Limit (Rs)"
               >
                 <InputNumber style={{ width: '100%' }} min={0} />
               </Form.Item>
               {!editingCustomer && (
                 <Form.Item
                   name="openingBalance"
-                  label="Opening Balance (₹) [Amount customer owes]"
+                  label="Opening Balance (Rs) [Amount customer owes]"
                 >
                   <InputNumber style={{ width: '100%' }} />
                 </Form.Item>

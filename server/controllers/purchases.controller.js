@@ -2,6 +2,7 @@ const PurchaseEntry = require('../models/PurchaseEntry');
 const Supplier = require('../models/Supplier');
 const Unit = require('../models/Unit');
 const stockService = require('../services/stockService');
+const auditService = require('../services/auditService');
 
 exports.getPurchases = async (req, res, next) => {
   try {
@@ -116,10 +117,13 @@ exports.createPurchase = async (req, res, next) => {
 
     await purchase.save();
 
-    res.status(201).json({
-      success: true,
-      data: purchase
-    });
+    await auditService.log(
+      req.user, 'CREATE', 'Purchase', purchase._id,
+      `Purchase: ${normalizedQuantity}L @ ₹${normalizedRate} from supplier — ₹${amount}`,
+      { supplierId, unitId, quantity: normalizedQuantity, rate: normalizedRate, amount, paymentStatus }
+    );
+
+    res.status(201).json({ success: true, data: purchase });
   } catch (error) {
     if (supplierUpdated) {
       const supplier = await Supplier.findById(req.body.supplierId || req.body.supplier);

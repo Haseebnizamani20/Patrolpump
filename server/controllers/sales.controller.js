@@ -3,6 +3,7 @@ const Customer = require('../models/Customer');
 const Unit = require('../models/Unit');
 const stockService = require('../services/stockService');
 const ledgerService = require('../services/ledgerService');
+const auditService = require('../services/auditService');
 
 exports.getSales = async (req, res, next) => {
   try {
@@ -132,6 +133,12 @@ exports.createSale = async (req, res, next) => {
 
     await sale.save();
 
+    await auditService.log(
+      req.user, 'CREATE', 'Sale', sale._id,
+      `Sale: ${quantity}L @ ₹${rate} = ₹${amount} (${paymentType})`,
+      { customerId, unitId, quantity, rate, amount, paymentType }
+    );
+
     res.status(201).json({
       success: true,
       data: sale,
@@ -203,10 +210,13 @@ exports.voidSale = async (req, res, next) => {
 
     await sale.save();
 
-    res.json({
-      success: true,
-      data: sale
-    });
+    await auditService.log(
+      req.user, 'VOID', 'Sale', sale._id,
+      `Voided sale ₹${sale.amount} — Reason: ${voidReason}`,
+      { voidReason, quantity: sale.quantity, amount: sale.amount }
+    );
+
+    res.json({ success: true, data: sale });
   } catch (error) {
     if (balanceReversed) {
       await ledgerService.addToBalance(mutationSale.customerId, mutationSale.dueAmount);

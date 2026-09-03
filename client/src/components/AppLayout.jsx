@@ -11,6 +11,14 @@ import {
   ShoppingCartOutlined,
   DollarOutlined,
   SlidersOutlined,
+  WalletOutlined,
+  FileTextOutlined,
+  BankOutlined,
+  BarChartOutlined,
+  CreditCardOutlined,
+  AuditOutlined,
+  UsergroupAddOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 
@@ -57,9 +65,49 @@ const AppLayout = () => {
       icon: <DollarOutlined />,
       label: 'Sale Entry',
     },
+    {
+      key: '/payments',
+      icon: <WalletOutlined />,
+      label: 'Payments',
+    },
+    {
+      key: '/expenses',
+      icon: <FileTextOutlined />,
+      label: 'Expenses',
+    },
+    {
+      key: '/supplier-payments',
+      icon: <CreditCardOutlined />,
+      label: 'Supplier Payments',
+    },
+    {
+      key: '/cash-session',
+      icon: <BankOutlined />,
+      label: 'Cash Session',
+    },
   ];
 
   if (isOwner) {
+    menuItems.push({
+      key: '/reports',
+      icon: <BarChartOutlined />,
+      label: 'Reports',
+    });
+    menuItems.push({
+      key: '/audit-log',
+      icon: <AuditOutlined />,
+      label: 'Audit Log',
+    });
+    menuItems.push({
+      key: '/users',
+      icon: <UsergroupAddOutlined />,
+      label: 'Users',
+    });
+    menuItems.push({
+      key: '/backup',
+      icon: <CloudUploadOutlined />,
+      label: 'Backup',
+    });
     menuItems.push({
       key: '/stock-adjustments',
       icon: <SlidersOutlined />,

@@ -13,6 +13,7 @@ import {
   Typography,
   message,
   Card,
+  Popconfirm,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -212,12 +213,12 @@ const SalePage = () => {
       key: 'quantity',
     },
     {
-      title: 'Rate (₹/L)',
+      title: 'Rate (Rs/L)',
       dataIndex: 'rate',
       key: 'rate',
     },
     {
-      title: 'Amount (₹)',
+      title: 'Amount (Rs)',
       dataIndex: 'amount',
       key: 'amount',
     },
@@ -228,12 +229,12 @@ const SalePage = () => {
       render: (text) => <Tag>{text}</Tag>
     },
     {
-      title: 'Amount Paid (₹)',
+      title: 'Amount Paid (Rs)',
       dataIndex: 'amountPaid',
       key: 'amountPaid',
     },
     {
-      title: 'Due Amount (₹)',
+      title: 'Due Amount (Rs)',
       dataIndex: 'dueAmount',
       key: 'dueAmount',
     },
@@ -254,16 +255,19 @@ const SalePage = () => {
       render: (_, record) => {
         if (record.status === 'active' && isOwner) {
           return (
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
-              onClick={() => {
+            <Popconfirm
+              title="Void this sale?"
+              description={`This will reverse stock and ledger for Rs ${record.amount?.toFixed(2)}. This action cannot be undone.`}
+              onConfirm={() => {
                 setSaleToVoid(record._id);
                 setVoidModalVisible(true);
               }}
+              okText="Yes, Void"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
             >
-              Void
-            </Button>
+              <Button danger icon={<DeleteOutlined />}>Void</Button>
+            </Popconfirm>
           );
         }
         return null;
@@ -347,9 +351,9 @@ const SalePage = () => {
 
           {customerType === 'Credit Customer' && selectedCustomer && (
             <Card size="small" style={{ marginBottom: 16, backgroundColor: '#f0f2f5' }}>
-              <Text strong>Current Due: </Text><Text type="danger">₹{selectedCustomer.currentBalance || 0}</Text> | 
-              <Text strong> Credit Limit: </Text><Text>₹{selectedCustomer.creditLimit || 0}</Text> | 
-              <Text strong> Available: </Text><Text type="success">₹{(selectedCustomer.creditLimit || 0) - (selectedCustomer.currentBalance || 0)}</Text>
+              <Text strong>Current Due: </Text><Text type="danger">Rs {selectedCustomer.currentBalance || 0}</Text> |
+              <Text strong> Credit Limit: </Text><Text>Rs {selectedCustomer.creditLimit || 0}</Text> |
+              <Text strong> Available: </Text><Text type="success">Rs {(selectedCustomer.creditLimit || 0) - (selectedCustomer.currentBalance || 0)}</Text>
             </Card>
           )}
 
@@ -378,7 +382,7 @@ const SalePage = () => {
 
             <Form.Item
               name="rate"
-              label="Rate (₹/Liter)"
+              label="Rate (Rs/Liter)"
               rules={[{ required: true, message: 'Please enter rate' }]}
               style={{ flex: 1 }}
             >
@@ -387,7 +391,7 @@ const SalePage = () => {
 
             <Form.Item
               name="amount"
-              label="Total Amount (₹)"
+              label="Total Amount (Rs)"
               style={{ flex: 1 }}
             >
               <InputNumber style={{ width: '100%' }} disabled />
@@ -409,7 +413,7 @@ const SalePage = () => {
           {paymentType === 'Partial' && (
             <Form.Item
               name="cashPaid"
-              label="Cash Paid (₹)"
+              label="Cash Paid (Rs)"
               rules={[{ required: true, message: 'Please enter cash paid' }]}
             >
               <InputNumber style={{ width: '100%' }} min={0.01} max={form.getFieldValue('amount')} />

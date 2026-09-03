@@ -9,11 +9,58 @@
     "client": "cd client && npm run dev",
     "electron": "electron .",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "start": "concurrently \"npm run server\" \"npm run client\" \"wait-on http://localhost:5173 && npm run electron\""
+    "start": "concurrently \"npm run server\" \"npm run client\" \"wait-on http://localhost:5173 && npm run electron\"",
+    "build:client": "cd client && npx vite build",
+    "build:win": "npm run build:client && electron-builder --win",
+    "backup": "node backup/backup-script.js"
+  },
+  "build": {
+    "appId": "com.dieselpump.management",
+    "productName": "Diesel Pump Management System",
+    "copyright": "Copyright © 2024",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "client/dist/**/*",
+      "backup/**/*",
+      ".env",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backup",
+        "to": "backup"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pump Manager"
+    },
+    "electronDownload": {
+      "cache": ".electron-cache"
+    }
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
     "wait-on": "^7.2.0"
   }
 }

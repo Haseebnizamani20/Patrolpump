@@ -159,7 +159,7 @@ diesel-pump-app/
 ---
 
 ### Phase 9 — Dashboard
-- Today's sales, today's stock levels, top customer dues, low-stock alert, yesterday's cash variance flag.
+- Today's sales, today's stock levels, top customer dues, low-stock alert, yesterday's cash variance flag,Total Customer Dues .
 
 **Exit criteria:** Dashboard numbers match their respective detailed reports for the same day.
 
