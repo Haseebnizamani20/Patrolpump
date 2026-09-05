@@ -1,0 +1,45 @@
+.dashboard-content {
+  background: #EDF2F0 !important;
+}
+
+.dashboard-page .ant-card {
+  background: #FFFFFF;
+  border: 1px solid #CDD7D3;
+}
+
+.dashboard-page .ant-statistic-content,
+.dashboard-page .dashboard-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-page .ant-statistic-content {
+  display: flex;
+  align-items: baseline;
+  height: 40px;
+  line-height: 40px;
+}
+
+.fuel-tank-wrap {
+  display: flex;
+  justify-content: center;
+  height: 150px;
+  line-height: 150px;
+}
+
+.fuel-tank {
+  display: block;
+  width: 100px;
+  height: 150px;
+}
+
+.fuel-tank-label {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-tank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}

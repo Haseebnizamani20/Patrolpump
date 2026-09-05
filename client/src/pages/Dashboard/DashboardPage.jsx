@@ -1,24 +1,58 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import {
   Row, Col, Card, Statistic, Table, Tag, Alert, Badge,
-  Button, Progress, Tooltip, Typography, Space, Spin, Divider,
+  Button, Tooltip, Typography, Space, Spin,
 } from 'antd';
 import {
   DollarOutlined, FireOutlined, ShoppingCartOutlined,
   WarningOutlined, UserOutlined, ReloadOutlined,
-  BankOutlined, RiseOutlined, FallOutlined,
-  CheckCircleOutlined, ClockCircleOutlined,
+  RiseOutlined, FallOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
+import './DashboardPage.css';
 
 const { Title, Text } = Typography;
 const fmt = (v) => `Rs ${Number(v || 0).toFixed(2)}`;
 
+const FuelTank = ({ percentage, fuelType }) => {
+  const clipId = useId().replace(/:/g, '');
+  const pct = Math.max(0, Math.min(Number(percentage) || 0, 100));
+  const isEmpty = pct === 0;
+  const liquidTop = 140 - ((125 * pct) / 100);
+  const liquidColor = { petrol: '#C9720E', diesel: '#7A4B2A', cng: '#1677ff' }[fuelType] || '#7A4B2A';
+
+  return (
+    <svg className="fuel-tank" viewBox="0 0 100 150" role="img" aria-label={`${pct.toFixed(0)}% full`}>
+      <defs>
+        <clipPath id={clipId}><rect x="10" y="15" width="80" height="125" rx="16" /></clipPath>
+      </defs>
+      <rect x="10" y="15" width="80" height="125" rx="16" fill="#EDF2F0" />
+      {!isEmpty && (
+        <g clipPath={`url(#${clipId})`}>
+          <path
+            d={`M10,${liquidTop} C28,${liquidTop - 7} 46,${liquidTop + 6} 64,${liquidTop - 1} C74,${liquidTop - 5} 84,${liquidTop + 2} 90,${liquidTop - 1} L90,140 L10,140 Z`}
+            fill={liquidColor}
+          />
+        </g>
+      )}
+      {[109, 77, 46].map((y) => <line key={y} x1="5" y1={y} x2="10" y2={y} stroke="#CDD7D3" strokeWidth="2" />)}
+      <rect
+        x="10" y="15" width="80" height="125" rx="16" fill="none"
+        stroke={isEmpty ? '#ff4d4f' : '#0D1417'} strokeWidth="2"
+        strokeDasharray={isEmpty ? '5 4' : undefined} opacity="0.85"
+      />
+      <text x="50" y="80" textAnchor="middle" dominantBaseline="middle" className="fuel-tank-label" fill={pct >= 45 ? '#FFFFFF' : '#0D1417'}>
+        {isEmpty ? 'Empty' : `${pct.toFixed(0)}%`}
+      </text>
+    </svg>
+  );
+};
+
 // ---- Widget: Today's Sales KPIs ----
-const SalesKPIs = ({ sales, expenses, paymentsReceived, netCash }) => (
+const SalesKPIs = ({ sales, expenses, paymentsReceived, cashPaidToSuppliers }) => (
   <Card title={<><ShoppingCartOutlined /> Today's Sales</>} style={{ marginBottom: 16 }}>
     <Row gutter={[16, 16]}>
       <Col xs={12} sm={8} md={6}>
@@ -46,62 +80,12 @@ const SalesKPIs = ({ sales, expenses, paymentsReceived, netCash }) => (
           valueStyle={{ color: '#cf1322' }} />
       </Col>
       <Col xs={12} sm={8} md={6}>
-        <Statistic title="Net Cash Position" value={netCash} prefix="Rs" precision={2}
-          valueStyle={{ color: netCash >= 0 ? '#52c41a' : '#cf1322' }} />
+        <Statistic title="Paid to Suppliers" value={cashPaidToSuppliers} prefix="Rs" precision={2}
+          valueStyle={{ color: '#cf1322' }} />
       </Col>
     </Row>
   </Card>
 );
-
-// ---- Widget: Cash Session Status ----
-const CashSessionWidget = ({ session, yesterdayVariance }) => {
-  const navigate = useNavigate();
-  const sessionOpen = session?.status === 'open';
-  const hasVariance = yesterdayVariance && yesterdayVariance.shortageOrExcess !== 0;
-
-  return (
-    <Card title={<><BankOutlined /> Cash Session</>} style={{ marginBottom: 16 }}>
-      {!session ? (
-        <Alert
-          type="warning"
-          message="No session opened today"
-          description="Open a cash session to start recording entries."
-          action={<Button size="small" onClick={() => navigate('/cash-session')}>Open Session</Button>}
-          showIcon
-        />
-      ) : (
-        <Row gutter={16}>
-          <Col span={12}>
-            <Statistic title="Status"
-              value={sessionOpen ? 'OPEN' : 'CLOSED'}
-              valueStyle={{ color: sessionOpen ? '#52c41a' : '#cf1322' }}
-              prefix={sessionOpen ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
-            />
-          </Col>
-          <Col span={12}>
-            <Statistic title="Opening Cash" value={session.openingCash} prefix="Rs" precision={2} />
-          </Col>
-          {session.openedBy && (
-            <Col span={24} style={{ marginTop: 8 }}>
-              <Text type="secondary">Opened by: {session.openedBy}</Text>
-            </Col>
-          )}
-        </Row>
-      )}
-
-      {hasVariance && (
-        <Alert
-          style={{ marginTop: 12 }}
-          type={yesterdayVariance.shortageOrExcess < 0 ? 'error' : 'warning'}
-          showIcon
-          icon={<WarningOutlined />}
-          message={`Yesterday's variance: ${fmt(yesterdayVariance.shortageOrExcess)}`}
-          description={`Expected Rs ${yesterdayVariance.expectedCash?.toFixed(2)}, Counted Rs ${yesterdayVariance.closingCash?.toFixed(2)}`}
-        />
-      )}
-    </Card>
-  );
-};
 
 // ---- Widget: Stock Levels ----
 const StockWidget = ({ stockData }) => {
@@ -111,7 +95,7 @@ const StockWidget = ({ stockData }) => {
   return (
     <Card
       title={<><FireOutlined /> Stock Levels</>}
-      extra={<Text type="secondary">Total: {fmt(totalStockValue)}</Text>}
+      extra={<Text type="secondary">Total: <span className="dashboard-numeric">{fmt(totalStockValue)}</span></Text>}
       style={{ marginBottom: 16 }}
     >
       {lowStockAlerts.length > 0 && (
@@ -123,12 +107,11 @@ const StockWidget = ({ stockData }) => {
           style={{ marginBottom: 12 }}
         />
       )}
-      <Row gutter={[12, 12]}>
+      <div className="stock-tank-grid">
         {units.map(u => {
           const pct = u.utilizationPct;
-          const color = pct < 20 ? '#ff4d4f' : pct < 40 ? '#faad14' : '#52c41a';
           return (
-            <Col xs={24} sm={12} key={u._id}>
+            <div key={u._id}>
               <Card size="small" style={{ border: `1px solid ${u.isLowStock ? '#ff4d4f' : '#f0f0f0'}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <Text strong>{u.name}</Text>
@@ -138,18 +121,21 @@ const StockWidget = ({ stockData }) => {
                   </Space>
                 </div>
                 <Tooltip title={`${u.currentStock.toFixed(1)}L / ${u.capacity}L — Avg cost: ${fmt(u.avgCost)}/L`}>
-                  <Progress percent={Math.min(pct, 100)} strokeColor={color} size="small"
-                    format={() => `${u.currentStock.toFixed(0)}L`} />
+                  <div className="fuel-tank-wrap">
+                    <FuelTank percentage={pct} fuelType={u.fuelType} />
+                  </div>
                 </Tooltip>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Capacity: {u.capacity}L</Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Value: {fmt(u.stockValue)}</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Capacity: <span className="dashboard-numeric">{u.capacity}L</span> · Current: <span className="dashboard-numeric">{u.currentStock.toFixed(0)}L</span>
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Value: <span className="dashboard-numeric">{fmt(u.stockValue)}</span></Text>
                 </div>
               </Card>
-            </Col>
+            </div>
           );
         })}
-      </Row>
+      </div>
       <Button type="link" style={{ paddingLeft: 0, marginTop: 8 }} onClick={() => navigate('/reports')}>
         Full Stock Report →
       </Button>
@@ -240,7 +226,7 @@ const DashboardPage = () => {
   }, [fetchDashboard]);
 
   return (
-    <div>
+    <div className="dashboard-page">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
@@ -268,33 +254,21 @@ const DashboardPage = () => {
         </div>
       ) : data ? (
         <>
-          {/* Row 1: Session + Cash Position */}
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <CashSessionWidget
-                session={data.cashSession}
-                yesterdayVariance={data.yesterdayVariance}
-              />
-            </Col>
-            <Col xs={24} md={16}>
+          {/* Row 1: Today's Sales */}
+          <Row>
+            <Col span={24}>
               <SalesKPIs
                 sales={data.today.sales}
                 expenses={data.today.expenses}
                 paymentsReceived={data.today.paymentsReceived}
-                netCash={data.today.netCash}
+                cashPaidToSuppliers={data.today.cashPaidToSuppliers}
               />
             </Col>
           </Row>
 
-          {/* Row 2: Stock + Customer Dues */}
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <StockWidget stockData={data.stock} />
-            </Col>
-            <Col xs={24} md={12}>
-              <TopDuesWidget duesData={data.customerDues} />
-            </Col>
-          </Row>
+          {/* Row 2: Stock, then customer dues */}
+          <StockWidget stockData={data.stock} />
+          <TopDuesWidget duesData={data.customerDues} />
 
           {/* Row 3: Today's Purchases summary (owner only) */}
           {isOwner && data.today.purchases.count > 0 && (

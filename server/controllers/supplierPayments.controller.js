@@ -1,6 +1,7 @@
 const SupplierPayment = require('../models/SupplierPayment');
 const Supplier = require('../models/Supplier');
 const auditService = require('../services/auditService');
+const { runAtomic } = require('../services/transactionService');
 
 /**
  * GET /api/supplier-payments
@@ -56,9 +57,6 @@ exports.getSupplierPayment = async (req, res, next) => {
  * Record a payment to a supplier and reduce their outstandingPayable.
  */
 exports.createSupplierPayment = async (req, res, next) => {
-  let payableReduced = false;
-  let savedPayment = null;
-
   try {
     const { supplierId, amount, mode, referenceNo, notes, date, ownerOverride } = req.body;
 
@@ -74,72 +72,33 @@ exports.createSupplierPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Amount must be a positive number' });
     }
 
-    const supplier = await Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ success: false, message: 'Supplier not found' });
-    }
-    if (!supplier.isActive) {
-      return res.status(400).json({ success: false, message: 'Supplier is inactive' });
-    }
+    const { payment, updatedPayable } = await runAtomic(async (session) => {
+      const supplier = await Supplier.findById(supplierId).session(session);
+      if (!supplier) { const error = new Error('Supplier not found'); error.status = 404; throw error; }
+      if (!supplier.isActive) { const error = new Error('Supplier is inactive'); error.status = 400; throw error; }
 
-    // Warn (but allow with owner override) if payment exceeds outstanding
-    const resultingPayable = Math.round((supplier.outstandingPayable - parsedAmount) * 100) / 100;
-    if (resultingPayable < 0) {
-      if (!(ownerOverride === true && req.user.role === 'owner')) {
-        return res.status(400).json({
-          success: false,
-          code: 'OVERPAYMENT',
-          message: `Payment of ₹${parsedAmount} exceeds outstanding payable of ₹${supplier.outstandingPayable.toFixed(2)}`,
-          outstandingPayable: supplier.outstandingPayable,
-        });
+      const resultingPayable = Math.round((supplier.outstandingPayable - parsedAmount) * 100) / 100;
+      if (resultingPayable < 0 && !(ownerOverride === true && req.user.role === 'owner')) {
+        const error = new Error(`Payment of ₹${parsedAmount} exceeds outstanding payable of ₹${supplier.outstandingPayable.toFixed(2)}`);
+        error.status = 400; error.code = 'OVERPAYMENT'; error.outstandingPayable = supplier.outstandingPayable; throw error;
       }
-    }
-
-    // Reduce outstanding payable
-    supplier.outstandingPayable = Math.max(0, resultingPayable);
-    await supplier.save();
-    payableReduced = true;
-
-    // Save the payment record
-    const payment = await SupplierPayment.create({
-      date: date ? new Date(date) : new Date(),
-      supplierId,
-      amount: parsedAmount,
-      mode,
-      referenceNo,
-      notes,
-      recordedBy: req.user._id,
+      supplier.outstandingPayable = Math.max(0, resultingPayable);
+      await supplier.save(session ? { session } : undefined);
+      const createdPayment = new SupplierPayment({ date: date ? new Date(date) : new Date(), supplierId, amount: parsedAmount, mode, referenceNo, notes, recordedBy: req.user._id });
+      await createdPayment.save(session ? { session } : undefined);
+      await auditService.log(req.user, 'CREATE', 'SupplierPayment', createdPayment._id,
+        `Paid ₹${parsedAmount} to ${supplier.name} via ${mode}`,
+        { supplierId, amount: parsedAmount, mode, newPayable: supplier.outstandingPayable }, session);
+      return { payment: createdPayment, updatedPayable: supplier.outstandingPayable };
     });
-    savedPayment = payment;
-
-    // Audit log
-    await auditService.log(
-      req.user, 'CREATE', 'SupplierPayment', payment._id,
-      `Paid ₹${parsedAmount} to ${supplier.name} via ${mode}`,
-      { supplierId, amount: parsedAmount, mode, newPayable: supplier.outstandingPayable }
-    );
-
-    const updatedSupplier = await Supplier.findById(supplierId);
     res.status(201).json({
       success: true,
       data: payment,
-      updatedPayable: updatedSupplier.outstandingPayable,
+      updatedPayable,
     });
   } catch (error) {
-    // Rollback payable if payment doc failed to save
-    if (payableReduced && !savedPayment) {
-      try {
-        const supplier = await Supplier.findById(req.body.supplierId);
-        if (supplier) {
-          supplier.outstandingPayable = Math.round(
-            (supplier.outstandingPayable + Math.round(Number(req.body.amount) * 100) / 100) * 100
-          ) / 100;
-          await supplier.save();
-        }
-      } catch (rollbackErr) {
-        console.error('Rollback failed:', rollbackErr.message);
-      }
-    }
+    if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
+    if (error.status === 400) return res.status(400).json({ success: false, ...(error.code && { code: error.code }), ...(error.outstandingPayable !== undefined && { outstandingPayable: error.outstandingPayable }), message: error.message });
     next(error);
   }
 };

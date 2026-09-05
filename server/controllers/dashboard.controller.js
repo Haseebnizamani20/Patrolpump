@@ -5,6 +5,7 @@ const Expense = require('../models/Expense');
 const CashSession = require('../models/CashSession');
 const Customer = require('../models/Customer');
 const Unit = require('../models/Unit');
+const SupplierPayment = require('../models/SupplierPayment');
 
 /** Returns the start and end of a calendar day */
 const dayBounds = (date) => {
@@ -38,7 +39,7 @@ exports.getDashboardData = async (req, res, next) => {
           count: { $sum: 1 },
           totalAmount: { $sum: '$amount' },
           totalLiters: { $sum: '$quantity' },
-          cashSales: { $sum: { $cond: [{ $eq: ['$paymentType', 'cash'] }, '$amount', 0] } },
+          cashSales: { $sum: '$amountPaid' },
           creditSales: { $sum: { $cond: [{ $eq: ['$paymentType', 'credit'] }, '$amount', 0] } },
           grossProfit: { $sum: { $subtract: ['$amount', { $multiply: ['$costAtSale', '$quantity'] }] } },
         },
@@ -58,17 +59,23 @@ exports.getDashboardData = async (req, res, next) => {
 
     // ---- Today's expenses ----
     const todayExpenses = await Expense.aggregate([
-      { $match: { date: { $gte: todayStart, $lte: todayEnd } } },
+      { $match: { date: { $gte: todayStart, $lte: todayEnd }, mode: 'cash' } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
     const expenseTotal = todayExpenses[0]?.total || 0;
 
     // ---- Today's payments received ----
     const todayPayments = await Payment.aggregate([
-      { $match: { date: { $gte: todayStart, $lte: todayEnd } } },
+      { $match: { date: { $gte: todayStart, $lte: todayEnd }, mode: 'cash' } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
     const paymentTotal = todayPayments[0]?.total || 0;
+
+    const todaySupplierPayments = await SupplierPayment.aggregate([
+      { $match: { date: { $gte: todayStart, $lte: todayEnd }, mode: 'cash' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]);
+    const supplierPaymentTotal = todaySupplierPayments[0]?.total || 0;
 
     // ---- Today's cash session ----
     const todaySession = await CashSession.findOne({
@@ -117,12 +124,6 @@ exports.getDashboardData = async (req, res, next) => {
     ]);
     const duesSummary = totalDues[0] || { total: 0, count: 0 };
 
-    // ---- Net cash position today ----
-    const openingCash = todaySession?.openingCash || 0;
-    const netCash = Math.round(
-      (openingCash + salesSummary.cashSales + paymentTotal - expenseTotal) * 100
-    ) / 100;
-
     // Round all money values
     const r = (v) => Math.round((v || 0) * 100) / 100;
 
@@ -147,7 +148,7 @@ exports.getDashboardData = async (req, res, next) => {
           },
           expenses: r(expenseTotal),
           paymentsReceived: r(paymentTotal),
-          netCash: r(netCash),
+          cashPaidToSuppliers: r(supplierPaymentTotal),
         },
         // Cash session
         cashSession: todaySession

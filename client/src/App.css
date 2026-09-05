@@ -15,3 +15,106 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+.report-print-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.report-print-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html[data-printing-report] body * {
+    visibility: hidden !important;
+  }
+
+  html[data-printing-report] .report-print-view.is-active,
+  html[data-printing-report] .report-print-view.is-active * {
+    visibility: visible !important;
+  }
+
+  html[data-printing-report] .report-print-view.is-active {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  html[data-printing-report] .report-print-view:not(.is-active),
+  html[data-printing-report] .no-print,
+  html[data-printing-report] .report-filter-controls,
+  html[data-printing-report] .ant-table-pagination,
+  html[data-printing-report] .ant-empty,
+  html[data-printing-report] button,
+  html[data-printing-report] .ant-picker,
+  html[data-printing-report] .ant-select,
+  html[data-printing-report] .ant-radio-group {
+    display: none !important;
+  }
+
+  html[data-printing-report] .report-print-header {
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 0 12px;
+    margin: 0 0 18px;
+    border-bottom: 2px solid #1677ff;
+  }
+
+  html[data-printing-report] .report-print-header h1 {
+    margin: 0;
+    font-size: 18pt;
+    color: #123b6d;
+  }
+
+  html[data-printing-report] .report-print-header p,
+  html[data-printing-report] .report-print-metadata span {
+    display: block;
+    margin: 2px 0 0;
+    color: #444;
+    font-size: 9pt;
+  }
+
+  html[data-printing-report] .report-print-metadata {
+    min-width: 220px;
+    text-align: right;
+    font-size: 10pt;
+  }
+
+  html[data-printing-report] .ant-card {
+    box-shadow: none !important;
+    border-color: #c9c9c9 !important;
+  }
+
+  html[data-printing-report] .ant-table,
+  html[data-printing-report] .ant-descriptions {
+    font-size: 9pt !important;
+  }
+
+  html[data-printing-report] .ant-table-thead > tr > th {
+    background: #edf4fb !important;
+    color: #111 !important;
+  }
+
+  html[data-printing-report] .ant-table-row,
+  html[data-printing-report] .ant-descriptions-row,
+  html[data-printing-report] .ant-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  html[data-printing-report] .ant-table-wrapper {
+    overflow: visible !important;
+  }
+}

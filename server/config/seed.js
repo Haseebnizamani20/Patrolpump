@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Customer = require('../models/Customer');
+const Unit = require('../models/Unit');
 
 /**
  * Seed the default Owner account on first run.
@@ -44,9 +45,24 @@ const seedWalkInCustomer = async () => {
   }
 };
 
+const migrateLegacyUnits = async () => {
+  try {
+    const result = await Unit.updateMany(
+      { fuelType: { $exists: false } },
+      { $set: { fuelType: 'diesel' } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`✔ Set diesel as the fuel type for ${result.modifiedCount} legacy unit(s)`);
+    }
+  } catch (error) {
+    console.error('Error migrating unit fuel types:', error.message);
+  }
+};
+
 const runSeeds = async () => {
   await seedDefaultOwner();
   await seedWalkInCustomer();
+  await migrateLegacyUnits();
 };
 
 module.exports = runSeeds;

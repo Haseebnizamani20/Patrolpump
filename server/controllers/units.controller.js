@@ -35,7 +35,7 @@ exports.createUnit = async (req, res, next) => {
 
 exports.updateUnit = async (req, res, next) => {
   try {
-    const { name, capacity, status } = req.body;
+    const { name, capacity, fuelType, status } = req.body;
     
     const unit = await Unit.findById(req.params.id);
     if (!unit) {
@@ -48,6 +48,7 @@ exports.updateUnit = async (req, res, next) => {
 
     if (name) unit.name = name;
     if (capacity !== undefined) unit.capacity = capacity;
+    if (fuelType !== undefined) unit.fuelType = fuelType;
     if (status) unit.status = status;
 
     await unit.save();

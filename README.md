@@ -1,6 +1,6 @@
-# Diesel Pump Management System
+# Diesel/Petrol Pump Management System
 
-A desktop application for a diesel pump owner to manage tank/unit stock, customer credit ledgers, purchases, sales, daily cash reconciliation, and business reports — running entirely on a single laptop at the pump, with no internet dependency.
+A desktop application for a diesel/petrol pump owner to manage fuel-specific tank stock, customer credit ledgers, purchases, sales, daily cash reconciliation, and business reports — running entirely on a single laptop at the pump, with no internet dependency.
 
 ---
 
@@ -31,7 +31,7 @@ Runs fully offline on one laptop at the pump. No internet required for daily ope
 
 ## 3. Core Modules
 
-1. **Units Master** — tanks/dispensers: capacity, current stock, weighted avg. cost, status
+1. **Units Master** — diesel or petrol tanks/dispensers: capacity, current stock, weighted avg. cost, status
 2. **Customer Master** — retail & credit customers, credit limits, opening balances
 3. **Supplier Master** — diesel suppliers/depots
 4. **Purchase Entry** — stock in, per supplier, per tank
@@ -50,7 +50,7 @@ Runs fully offline on one laptop at the pump. No internet required for daily ope
 
 ### Unit (tank/dispenser)
 ```
-unitId, name, capacity, currentStock, avgCost, status(active/maintenance)
+unitId, name, fuelType(diesel/petrol), capacity, currentStock, avgCost, status(active/maintenance)
 ```
 
 ### Customer

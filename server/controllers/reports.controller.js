@@ -6,6 +6,7 @@ const CashSession = require('../models/CashSession');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
 const Unit = require('../models/Unit');
+const SupplierPayment = require('../models/SupplierPayment');
 
 /** Get start/end of a calendar day */
 const dayBounds = (dateStr) => {
@@ -55,6 +56,13 @@ exports.getDailyReport = async (req, res, next) => {
     const totalCashExpenses = expenses.filter(e => e.mode === 'cash').reduce((s, x) => s + x.amount, 0);
     const totalBankExpenses = expenses.filter(e => e.mode === 'bank').reduce((s, x) => s + x.amount, 0);
 
+    const supplierPayments = await SupplierPayment.find({ date: { $gte: start, $lte: end } })
+      .populate('supplierId', 'name');
+    const totalSupplierPayments = supplierPayments.reduce((s, x) => s + x.amount, 0);
+    const totalCashPaidToSuppliers = supplierPayments
+      .filter(p => p.mode === 'cash')
+      .reduce((s, x) => s + x.amount, 0);
+
     // --- Cash Session ---
     const session = await CashSession.findOne({ date: { $gte: start, $lte: end } })
       .populate('openedBy', 'name').populate('closedBy', 'name');
@@ -91,6 +99,12 @@ exports.getDailyReport = async (req, res, next) => {
           cashExpenses: Math.round(totalCashExpenses * 100) / 100,
           bankExpenses: Math.round(totalBankExpenses * 100) / 100,
           items: expenses,
+        },
+        supplierPayments: {
+          count: supplierPayments.length,
+          totalPaid: Math.round(totalSupplierPayments * 100) / 100,
+          cashPaid: Math.round(totalCashPaidToSuppliers * 100) / 100,
+          items: supplierPayments,
         },
         cashSession: session || null,
       },

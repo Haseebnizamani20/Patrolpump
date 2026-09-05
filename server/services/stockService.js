@@ -1,7 +1,7 @@
 const Unit = require('../models/Unit');
 
-exports.addStock = async (unitId, quantity, rate, allowOverCapacity = false) => {
-  const unit = await Unit.findById(unitId);
+exports.addStock = async (unitId, quantity, rate, allowOverCapacity = false, session = null) => {
+  const unit = await Unit.findById(unitId).session(session);
   if (!unit) throw new Error('Unit not found');
 
   if (!allowOverCapacity && unit.capacity && unit.currentStock + quantity > unit.capacity) {
@@ -15,11 +15,11 @@ exports.addStock = async (unitId, quantity, rate, allowOverCapacity = false) => 
   unit.avgCost = Math.round(newAvgCost * 100) / 100;
   unit.currentStock += quantity;
 
-  return await unit.save();
+  return await unit.save(session ? { session } : undefined);
 };
 
-exports.removeStock = async (unitId, quantity, allowNegative = false) => {
-  const unit = await Unit.findById(unitId);
+exports.removeStock = async (unitId, quantity, allowNegative = false, session = null) => {
+  const unit = await Unit.findById(unitId).session(session);
   if (!unit) throw new Error('Unit not found');
 
   if (!allowNegative && unit.currentStock < quantity) {
@@ -27,15 +27,15 @@ exports.removeStock = async (unitId, quantity, allowNegative = false) => {
   }
 
   unit.currentStock -= quantity;
-  return await unit.save();
+  return await unit.save(session ? { session } : undefined);
 };
 
-exports.reverseStockRemoval = async (unitId, quantity) => {
-  const unit = await Unit.findById(unitId);
+exports.reverseStockRemoval = async (unitId, quantity, session = null) => {
+  const unit = await Unit.findById(unitId).session(session);
   if (!unit) throw new Error('Unit not found');
 
   unit.currentStock += quantity;
-  return await unit.save();
+  return await unit.save(session ? { session } : undefined);
 };
 
 exports.restoreStockState = async (unitId, currentStock, avgCost) => {
@@ -47,8 +47,8 @@ exports.restoreStockState = async (unitId, currentStock, avgCost) => {
   return await unit.save();
 };
 
-exports.adjustStock = async (unitId, type, quantity) => {
-  const unit = await Unit.findById(unitId);
+exports.adjustStock = async (unitId, type, quantity, session = null) => {
+  const unit = await Unit.findById(unitId).session(session);
   if (!unit) throw new Error('Unit not found');
 
   if (type === 'shortage') {
@@ -65,5 +65,5 @@ exports.adjustStock = async (unitId, type, quantity) => {
     throw new Error('Invalid adjustment type');
   }
 
-  return await unit.save();
+  return await unit.save(session ? { session } : undefined);
 };

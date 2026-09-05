@@ -22,6 +22,12 @@ const unitSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  fuelType: {
+    type: String,
+    enum: ['diesel', 'petrol'],
+    required: true,
+    default: 'diesel',
+  },
   status: {
     type: String,
     enum: ['active', 'inactive', 'maintenance'],

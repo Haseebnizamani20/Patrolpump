@@ -66,7 +66,7 @@ const BackupPage = () => {
       title: 'Date & Time',
       dataIndex: 'timestamp',
       render: (ts) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text>{dayjs(ts).format('DD MMM YYYY')}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(ts).format('HH:mm:ss')}</Text>
         </Space>

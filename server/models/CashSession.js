@@ -43,8 +43,12 @@ const cashSessionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    totalCashPaidToSuppliers: {
+      type: Number,
+      default: 0,
+    },
 
-    // expectedCash = openingCash + cashSales + cashPaymentsReceived - cashExpenses
+    // expectedCash = openingCash + cashSales + cashPaymentsReceived - cashExpenses - cashPaidToSuppliers
     expectedCash: {
       type: Number,
       default: 0,

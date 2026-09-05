@@ -13,9 +13,9 @@ const AuditLog = require('../models/AuditLog');
  * @param {string} description - Human-readable one-liner (shown in UI)
  * @param {object} metadata - Optional extra data
  */
-exports.log = async (user, action, entityType, entityId, description, metadata = {}) => {
+exports.log = async (user, action, entityType, entityId, description, metadata = {}, session = null) => {
   try {
-    await AuditLog.create({
+    const entry = {
       timestamp: new Date(),
       userId: user?._id,
       userName: user?.name || user?.username || 'System',
@@ -25,7 +25,8 @@ exports.log = async (user, action, entityType, entityId, description, metadata =
       entityId: entityId || undefined,
       description,
       metadata,
-    });
+    };
+    await AuditLog.create([entry], session ? { session } : undefined);
   } catch (err) {
     // Never block the main request flow
     console.error('[AuditLog] Failed to write log entry:', err.message);

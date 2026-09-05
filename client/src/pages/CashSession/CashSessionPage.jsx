@@ -165,6 +165,7 @@ const CashSessionPage = () => {
     { title: 'Cash Sales', dataIndex: 'totalCashSales', key: 'cashSales', render: fmtCurrency, align: 'right' },
     { title: 'Payments In', dataIndex: 'totalCashPaymentsReceived', key: 'payIn', render: fmtCurrency, align: 'right' },
     { title: 'Cash Expenses', dataIndex: 'totalCashExpenses', key: 'cashExp', render: fmtCurrency, align: 'right' },
+    { title: 'Paid to Suppliers', dataIndex: 'totalCashPaidToSuppliers', key: 'supplierPay', render: fmtCurrency, align: 'right' },
     { title: 'Expected', dataIndex: 'expectedCash', key: 'expected', render: fmtCurrency, align: 'right' },
     { title: 'Actual', dataIndex: 'closingCash', key: 'actual', render: fmtCurrency, align: 'right' },
     {
@@ -252,10 +253,11 @@ const CashSessionPage = () => {
           )}
         >
           <Row gutter={16}>
-            <Col span={6}><Statistic title="Opening Cash" value={s.openingCash} prefix="Rs" precision={2} /></Col>
-            <Col span={6}><Statistic title="Cash Sales" value={s.totalCashSales} prefix="Rs" precision={2} valueStyle={{ color: '#389e0d' }} /></Col>
-            <Col span={6}><Statistic title="Payments In (Cash)" value={s.totalCashPaymentsReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Col>
-            <Col span={6}><Statistic title="Cash Expenses" value={s.totalCashExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
+            <Col span={4}><Statistic title="Opening Cash" value={s.openingCash} prefix="Rs" precision={2} /></Col>
+            <Col span={4}><Statistic title="Cash Sales" value={s.totalCashSales} prefix="Rs" precision={2} valueStyle={{ color: '#389e0d' }} /></Col>
+            <Col span={4}><Statistic title="Payments In (Cash)" value={s.totalCashPaymentsReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Col>
+            <Col span={4}><Statistic title="Cash Expenses" value={s.totalCashExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
+            <Col span={4}><Statistic title="Paid to Suppliers" value={s.totalCashPaidToSuppliers} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
           </Row>
           <Divider />
           <Row gutter={16}>
@@ -301,10 +303,11 @@ const CashSessionPage = () => {
           <>
             <Divider orientation="left">Live Cash Summary</Divider>
             <Row gutter={16}>
-              <Col span={6}><Statistic title="Cash Sales" value={summary.totalCashSales} prefix="Rs" precision={2} valueStyle={{ color: '#389e0d' }} /></Col>
-              <Col span={6}><Statistic title="Payments In (Cash)" value={summary.totalCashPaymentsReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Col>
-              <Col span={6}><Statistic title="Cash Expenses" value={summary.totalCashExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
-              <Col span={6}><Statistic title="Expected in Drawer" value={summary.expectedCash} prefix="Rs" precision={2} valueStyle={{ fontWeight: 'bold' }} /></Col>
+              <Col span={4}><Statistic title="Cash Sales" value={summary.totalCashSales} prefix="Rs" precision={2} valueStyle={{ color: '#389e0d' }} /></Col>
+              <Col span={4}><Statistic title="Payments In (Cash)" value={summary.totalCashPaymentsReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Col>
+              <Col span={4}><Statistic title="Cash Expenses" value={summary.totalCashExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
+              <Col span={4}><Statistic title="Paid to Suppliers" value={summary.totalCashPaidToSuppliers} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Col>
+              <Col span={4}><Statistic title="Expected in Drawer" value={summary.expectedCash} prefix="Rs" precision={2} valueStyle={{ fontWeight: 'bold' }} /></Col>
             </Row>
             <Alert
               style={{ marginTop: 16 }}

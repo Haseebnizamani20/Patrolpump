@@ -31,7 +31,7 @@ const UnitsPage = () => {
   const handleAdd = () => {
     setEditingUnit(null);
     form.resetFields();
-    form.setFieldsValue({ status: 'active' });
+    form.setFieldsValue({ status: 'active', fuelType: 'diesel' });
     setIsModalVisible(true);
   };
 
@@ -71,6 +71,12 @@ const UnitsPage = () => {
   };
 
   const columns = [
+    {
+      title: 'Fuel',
+      dataIndex: 'fuelType',
+      key: 'fuelType',
+      render: (fuelType) => <Tag color={fuelType === 'petrol' ? 'orange' : 'blue'}>{(fuelType || 'diesel').toUpperCase()}</Tag>,
+    },
     {
       title: 'Name',
       dataIndex: 'name',
@@ -158,6 +164,16 @@ const UnitsPage = () => {
             rules={[{ required: true, message: 'Please enter capacity' }]}
           >
             <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+          <Form.Item
+            name="fuelType"
+            label="Fuel Type"
+            rules={[{ required: true, message: 'Please select a fuel type' }]}
+          >
+            <Select>
+              <Select.Option value="diesel">Diesel</Select.Option>
+              <Select.Option value="petrol">Petrol</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="status"

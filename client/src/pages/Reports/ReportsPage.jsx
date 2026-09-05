@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
   Tabs, DatePicker, Button, Select, Table, Card, Statistic,
   Row, Col, Divider, Tag, Alert, Space, Typography, Descriptions,
@@ -17,6 +17,55 @@ const { RangePicker } = DatePicker;
 
 const fmt = (v) => `Rs ${Number(v || 0).toFixed(2)}`;
 const fmtL = (v) => `${Number(v || 0).toFixed(2)} L`;
+
+const ReportPrintContext = createContext(false);
+const useReportPrinting = () => useContext(ReportPrintContext);
+
+const ReportPrintView = ({ reportId, title, type, active, children }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [generatedAt, setGeneratedAt] = useState(null);
+
+  useEffect(() => {
+    const resetPrintState = () => {
+      setIsPrinting(false);
+      delete document.documentElement.dataset.printingReport;
+    };
+    window.addEventListener('afterprint', resetPrintState);
+    return () => window.removeEventListener('afterprint', resetPrintState);
+  }, []);
+
+  const handlePrint = () => {
+    setGeneratedAt(new Date());
+    setIsPrinting(true);
+    document.documentElement.dataset.printingReport = reportId;
+    window.setTimeout(() => window.print(), 100);
+  };
+
+  const stamp = generatedAt ? dayjs(generatedAt) : null;
+
+  return (
+    <section className={`report-print-view${active ? ' is-active' : ''}`} data-report-id={reportId}>
+      <header className="report-print-header">
+        <div>
+          <h1>Fuel Pump Management System</h1>
+          <p>Business Operations Report</p>
+        </div>
+        <div className="report-print-metadata">
+          <strong>{title}</strong>
+          <span>Report type: {type}</span>
+          <span>Generated: {stamp?.format('DD MMMM YYYY') || '—'}</span>
+          <span>Time: {stamp?.format('hh:mm A') || '—'}</span>
+        </div>
+      </header>
+      <div className="report-print-toolbar no-print">
+        <Button type="primary" icon={<PrinterOutlined />} onClick={handlePrint}>
+          Print Report
+        </Button>
+      </div>
+      <ReportPrintContext.Provider value={isPrinting}>{children}</ReportPrintContext.Provider>
+    </section>
+  );
+};
 
 // ============================================================
 // Tab 1: Daily Summary
@@ -60,7 +109,7 @@ const DailyReport = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <Space className="report-filter-controls" style={{ marginBottom: 16 }}>
         <DatePicker value={date} onChange={(d) => { setDate(d); fetchReport(d); }} />
         <Button icon={<SearchOutlined />} type="primary" onClick={() => fetchReport(date)}>Load</Button>
       </Space>
@@ -77,10 +126,11 @@ const DailyReport = () => {
             <Col span={6}><Card><Statistic title="Gross Profit" value={data.sales.grossProfit} prefix="Rs" precision={2} valueStyle={{ color: data.sales.grossProfit >= 0 ? '#389e0d' : '#cf1322' }} /></Card></Col>
           </Row>
           <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={6}><Card><Statistic title="Liters Sold" value={data.sales.totalLiters} suffix="L" precision={2} /></Card></Col>
-            <Col span={6}><Card><Statistic title="Purchases" value={data.purchases.totalAmount} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Card></Col>
-            <Col span={6}><Card><Statistic title="Payments Received" value={data.payments.totalReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Card></Col>
-            <Col span={6}><Card><Statistic title="Total Expenses" value={data.expenses.totalExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#fa8c16' }} /></Card></Col>
+            <Col xs={12} md={4}><Card><Statistic title="Liters Sold" value={data.sales.totalLiters} suffix="L" precision={2} /></Card></Col>
+            <Col xs={12} md={4}><Card><Statistic title="Purchases" value={data.purchases.totalAmount} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Card></Col>
+            <Col xs={12} md={4}><Card><Statistic title="Payments Received" value={data.payments.totalReceived} prefix="Rs" precision={2} valueStyle={{ color: '#1890ff' }} /></Card></Col>
+            <Col xs={12} md={4}><Card><Statistic title="Cash Paid to Suppliers" value={data.supplierPayments?.cashPaid ?? 0} prefix="Rs" precision={2} valueStyle={{ color: '#cf1322' }} /></Card></Col>
+            <Col xs={12} md={4}><Card><Statistic title="Total Expenses" value={data.expenses.totalExpenses} prefix="Rs" precision={2} valueStyle={{ color: '#fa8c16' }} /></Card></Col>
           </Row>
 
           {/* Cash Session */}
@@ -91,6 +141,7 @@ const DailyReport = () => {
                   <Tag color={data.cashSession.status === 'open' ? 'green' : 'red'}>{data.cashSession.status}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Opening">{fmt(data.cashSession.openingCash)}</Descriptions.Item>
+                <Descriptions.Item label="Cash paid to suppliers">{fmt(data.cashSession.totalCashPaidToSuppliers)}</Descriptions.Item>
                 <Descriptions.Item label="Expected">{fmt(data.cashSession.expectedCash)}</Descriptions.Item>
                 <Descriptions.Item label="Actual">{fmt(data.cashSession.closingCash)}</Descriptions.Item>
                 <Descriptions.Item label="Difference" span={2}>
@@ -118,6 +169,7 @@ const DailyReport = () => {
 // Tab 2: Customer Ledger
 // ============================================================
 const CustomerLedger = () => {
+  const isPrinting = useReportPrinting();
   const [customers, setCustomers] = useState([]);
   const [selectedCust, setSelectedCust] = useState(null);
   const [dateRange, setDateRange] = useState(null);
@@ -157,7 +209,7 @@ const CustomerLedger = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }} wrap>
+      <Space className="report-filter-controls" style={{ marginBottom: 16 }} wrap>
         <Select
           showSearch placeholder="Select credit customer" style={{ width: 240 }}
           optionFilterProp="label"
@@ -187,7 +239,7 @@ const CustomerLedger = () => {
 
           <Table
             dataSource={data.transactions} columns={ledgerColumns} rowKey={(r, i) => `${r.type}-${i}`}
-            pagination={{ pageSize: 30 }} size="small"
+            pagination={isPrinting ? false : { pageSize: 30 }} size="small"
             summary={() => (
               <Table.Summary.Row>
                 <Table.Summary.Cell colSpan={3}><strong>Totals</strong></Table.Summary.Cell>
@@ -259,6 +311,7 @@ const StockReport = () => {
 // Tab 4: Profit Report
 // ============================================================
 const ProfitReport = () => {
+  const isPrinting = useReportPrinting();
   const [dateRange, setDateRange] = useState([dayjs().startOf('month'), dayjs()]);
   const [groupBy, setGroupBy] = useState('day');
   const [data, setData] = useState(null);
@@ -305,7 +358,7 @@ const ProfitReport = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }} wrap>
+      <Space className="report-filter-controls" style={{ marginBottom: 16 }} wrap>
         <RangePicker value={dateRange} onChange={setDateRange} />
         <Radio.Group value={groupBy} onChange={(e) => setGroupBy(e.target.value)} buttonStyle="solid">
           <Radio.Button value="day">By Day</Radio.Button>
@@ -331,7 +384,7 @@ const ProfitReport = () => {
             dataSource={data.rows}
             columns={groupBy === 'day' ? dayColumns : unitColumns}
             rowKey={(r) => r.date || r.unit?._id || r.unit}
-            pagination={{ pageSize: 30 }}
+            pagination={isPrinting ? false : { pageSize: 30 }}
             size="small"
           />
         </>
@@ -345,6 +398,7 @@ const ProfitReport = () => {
 // Tab 5: Customer Dues (with ageing)
 // ============================================================
 const CustomerDues = () => {
+  const isPrinting = useReportPrinting();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -381,7 +435,7 @@ const CustomerDues = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <Space className="report-filter-controls" style={{ marginBottom: 16 }}>
         <Radio.Group
           value={showAll ? 'all' : 'dues'}
           onChange={e => { const a = e.target.value === 'all'; setShowAll(a); fetchDues(a); }}
@@ -390,7 +444,6 @@ const CustomerDues = () => {
           <Radio.Button value="dues">With Balance Only</Radio.Button>
           <Radio.Button value="all">All Credit Customers</Radio.Button>
         </Radio.Group>
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>Print</Button>
       </Space>
 
       {summary && (
@@ -406,7 +459,7 @@ const CustomerDues = () => {
       {loading ? <Spin size="large" style={{ display: 'block', margin: '40px auto' }} /> : (
         <Table
           dataSource={data?.customers} columns={columns} rowKey="_id"
-          pagination={{ pageSize: 30 }} size="small"
+          pagination={isPrinting ? false : { pageSize: 30 }} size="small"
           summary={() => summary && (
             <Table.Summary.Row>
               <Table.Summary.Cell colSpan={3}><strong>Total ({summary.count} customers)</strong></Table.Summary.Cell>
@@ -424,6 +477,7 @@ const CustomerDues = () => {
 // Tab 6: Supplier Dues
 // ============================================================
 const SupplierDues = () => {
+  const isPrinting = useReportPrinting();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -453,7 +507,7 @@ const SupplierDues = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <Space className="report-filter-controls" style={{ marginBottom: 16 }}>
         <Radio.Group
           value={showAll ? 'all' : 'dues'}
           onChange={e => { const a = e.target.value === 'all'; setShowAll(a); fetchDues(a); }}
@@ -462,7 +516,6 @@ const SupplierDues = () => {
           <Radio.Button value="dues">With Balance Only</Radio.Button>
           <Radio.Button value="all">All Suppliers</Radio.Button>
         </Radio.Group>
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>Print</Button>
       </Space>
 
       {data?.summary && (
@@ -475,7 +528,7 @@ const SupplierDues = () => {
       {loading ? <Spin size="large" style={{ display: 'block', margin: '40px auto' }} /> : (
         <Table
           dataSource={data?.suppliers} columns={columns} rowKey="_id"
-          pagination={{ pageSize: 20 }} size="small"
+          pagination={isPrinting ? false : { pageSize: 20 }} size="small"
           summary={() => data?.summary && (
             <Table.Summary.Row>
               <Table.Summary.Cell colSpan={3}><strong>Total ({data.summary.count} suppliers)</strong></Table.Summary.Cell>
@@ -493,6 +546,7 @@ const SupplierDues = () => {
 // Tab 7: Expense Summary
 // ============================================================
 const ExpenseSummaryReport = () => {
+  const isPrinting = useReportPrinting();
   const [dateRange, setDateRange] = useState([dayjs().startOf('month'), dayjs()]);
   const [groupBy, setGroupBy] = useState('category');
   const [data, setData] = useState(null);
@@ -532,7 +586,7 @@ const ExpenseSummaryReport = () => {
 
   return (
     <div>
-      <Space wrap style={{ marginBottom: 16 }}>
+      <Space className="report-filter-controls" wrap style={{ marginBottom: 16 }}>
         <RangePicker value={dateRange} onChange={setDateRange} />
         <Radio.Group value={groupBy} onChange={e => setGroupBy(e.target.value)} buttonStyle="solid">
           <Radio.Button value="category">By Category</Radio.Button>
@@ -540,7 +594,6 @@ const ExpenseSummaryReport = () => {
           <Radio.Button value="mode">By Mode</Radio.Button>
         </Radio.Group>
         <Button type="primary" icon={<SearchOutlined />} onClick={fetchReport}>Generate</Button>
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>Print</Button>
       </Space>
 
       {loading ? <Spin size="large" style={{ display: 'block', margin: '40px auto' }} /> : (
@@ -566,7 +619,7 @@ const ExpenseSummaryReport = () => {
             )}
           />
           <Divider orientation="left">All Entries</Divider>
-          <Table dataSource={data?.items} columns={itemColumns} rowKey="_id" pagination={{ pageSize: 30 }} size="small" />
+          <Table dataSource={data?.items} columns={itemColumns} rowKey="_id" pagination={isPrinting ? false : { pageSize: 30 }} size="small" />
         </>
       )}
       {!loading && !data && <Empty description="Set a date range and generate the report" />}
@@ -578,20 +631,25 @@ const ExpenseSummaryReport = () => {
 // Main ReportsPage
 // ============================================================
 const ReportsPage = () => {
+  const [activeKey, setActiveKey] = useState('daily');
   const tabs = [
-    { key: 'daily',    label: <span><FileTextOutlined /> Daily Summary</span>,    children: <DailyReport /> },
-    { key: 'ledger',   label: <span><UserOutlined /> Customer Ledger</span>,      children: <CustomerLedger /> },
-    { key: 'custDues', label: <span><TeamOutlined /> Customer Dues</span>,        children: <CustomerDues /> },
-    { key: 'suppDues', label: <span><ShopOutlined /> Supplier Dues</span>,        children: <SupplierDues /> },
-    { key: 'stock',    label: <span><DatabaseOutlined /> Stock Report</span>,     children: <StockReport /> },
-    { key: 'profit',   label: <span><RiseOutlined /> Profit Report</span>,        children: <ProfitReport /> },
-    { key: 'expenses', label: <span><DollarOutlined /> Expense Summary</span>,   children: <ExpenseSummaryReport /> },
-  ];
+    { key: 'daily', label: <span><FileTextOutlined /> Daily Summary</span>, title: 'Daily Summary', type: 'Daily operations', content: <DailyReport /> },
+    { key: 'ledger', label: <span><UserOutlined /> Customer Ledger</span>, title: 'Customer Ledger', type: 'Customer account statement', content: <CustomerLedger /> },
+    { key: 'custDues', label: <span><TeamOutlined /> Customer Dues</span>, title: 'Customer Dues', type: 'Accounts receivable', content: <CustomerDues /> },
+    { key: 'suppDues', label: <span><ShopOutlined /> Supplier Dues</span>, title: 'Supplier Dues', type: 'Accounts payable', content: <SupplierDues /> },
+    { key: 'stock', label: <span><DatabaseOutlined /> Stock Report</span>, title: 'Stock Report', type: 'Current inventory', content: <StockReport /> },
+    { key: 'profit', label: <span><RiseOutlined /> Profit Report</span>, title: 'Profit Report', type: 'Sales margin analysis', content: <ProfitReport /> },
+    { key: 'expenses', label: <span><DollarOutlined /> Expense Summary</span>, title: 'Expense Summary', type: 'Operating expenses', content: <ExpenseSummaryReport /> },
+  ].map(({ key, label, title, type, content }) => ({
+    key,
+    label,
+    children: <ReportPrintView reportId={key} title={title} type={type} active={activeKey === key}>{content}</ReportPrintView>,
+  }));
 
   return (
     <div>
       <Title level={3}>📊 Reports</Title>
-      <Tabs items={tabs} defaultActiveKey="daily" destroyInactiveTabPane={false} />
+      <Tabs items={tabs} activeKey={activeKey} onChange={setActiveKey} destroyInactiveTabPane={false} />
     </div>
   );
 };

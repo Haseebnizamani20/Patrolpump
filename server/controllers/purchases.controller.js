@@ -3,6 +3,7 @@ const Supplier = require('../models/Supplier');
 const Unit = require('../models/Unit');
 const stockService = require('../services/stockService');
 const auditService = require('../services/auditService');
+const { runAtomic } = require('../services/transactionService');
 
 exports.getPurchases = async (req, res, next) => {
   try {
@@ -34,11 +35,6 @@ exports.getPurchases = async (req, res, next) => {
 };
 
 exports.createPurchase = async (req, res, next) => {
-  let stockUpdated = false;
-  let supplierUpdated = false;
-  let previousStock;
-  let previousAvgCost;
-  let previousPayable;
   try {
     const { supplierId, unitId, quantity, rate, paymentStatus = 'pending', amountPaid = 0, invoiceNo, notes, ownerOverride, date } = req.body;
     
@@ -69,72 +65,56 @@ exports.createPurchase = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Amount paid does not match payment status' });
     }
     
-    const unit = await Unit.findById(unitId);
-    if (!unit) {
-      return res.status(404).json({ success: false, message: 'Unit not found' });
-    }
-
-    previousStock = unit.currentStock;
-    previousAvgCost = unit.avgCost;
-    
-    if (unit.capacity && (unit.currentStock + normalizedQuantity > unit.capacity)) {
-      if (!(ownerOverride === true && req.user.role === 'owner')) {
-        return res.status(400).json({ success: false, code: 'CAPACITY_EXCEEDED', message: 'Adding quantity would exceed unit capacity' });
+    const purchase = await runAtomic(async (session) => {
+      const unit = await Unit.findById(unitId).session(session);
+      if (!unit) {
+        const error = new Error('Unit not found');
+        error.status = 404;
+        throw error;
       }
-    }
 
-    const supplier = await Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ success: false, message: 'Supplier not found' });
-    }
+      if (unit.capacity && unit.currentStock + normalizedQuantity > unit.capacity &&
+          !(ownerOverride === true && req.user.role === 'owner')) {
+        const error = new Error('Adding quantity would exceed unit capacity');
+        error.status = 400;
+        error.code = 'CAPACITY_EXCEEDED';
+        throw error;
+      }
 
-    previousPayable = supplier.outstandingPayable;
+      const supplier = await Supplier.findById(supplierId).session(session);
+      if (!supplier) {
+        const error = new Error('Supplier not found');
+        error.status = 404;
+        throw error;
+      }
 
-    await stockService.addStock(unitId, normalizedQuantity, normalizedRate, ownerOverride === true && req.user.role === 'owner');
-    stockUpdated = true;
+      await stockService.addStock(unitId, normalizedQuantity, normalizedRate,
+        ownerOverride === true && req.user.role === 'owner', session);
 
-    if (paymentStatus === 'pending') {
-      supplier.outstandingPayable += amount;
-    } else if (paymentStatus === 'partial') {
-      supplier.outstandingPayable += (amount - normalizedAmountPaid);
-    }
-    // if 'paid', supplier.outstandingPayable remains unchanged
-    await supplier.save();
-    supplierUpdated = true;
+      if (paymentStatus === 'pending') supplier.outstandingPayable += amount;
+      if (paymentStatus === 'partial') supplier.outstandingPayable += amount - normalizedAmountPaid;
+      await supplier.save(session ? { session } : undefined);
 
-    const purchase = new PurchaseEntry({
-      date: date ? new Date(date) : Date.now(),
-      supplierId,
-      unitId,
-      quantity,
-      rate,
-      amount,
-      invoiceNo,
-      paymentStatus,
-      amountPaid: normalizedAmountPaid,
-      notes
+      const createdPurchase = new PurchaseEntry({
+        date: date ? new Date(date) : Date.now(), supplierId, unitId, quantity, rate,
+        amount, invoiceNo, paymentStatus, amountPaid: normalizedAmountPaid, notes,
+      });
+      await createdPurchase.save(session ? { session } : undefined);
+
+      await auditService.log(
+        req.user, 'CREATE', 'Purchase', createdPurchase._id,
+        `Purchase: ${normalizedQuantity}L @ ₹${normalizedRate} from supplier — ₹${amount}`,
+        { supplierId, unitId, quantity: normalizedQuantity, rate: normalizedRate, amount, paymentStatus }, session
+      );
+      return createdPurchase;
     });
-
-    await purchase.save();
-
-    await auditService.log(
-      req.user, 'CREATE', 'Purchase', purchase._id,
-      `Purchase: ${normalizedQuantity}L @ ₹${normalizedRate} from supplier — ₹${amount}`,
-      { supplierId, unitId, quantity: normalizedQuantity, rate: normalizedRate, amount, paymentStatus }
-    );
 
     res.status(201).json({ success: true, data: purchase });
   } catch (error) {
-    if (supplierUpdated) {
-      const supplier = await Supplier.findById(req.body.supplierId || req.body.supplier);
-      if (supplier) {
-        supplier.outstandingPayable = previousPayable;
-        await supplier.save();
-      }
+    if (error.code === 'CAPACITY_EXCEEDED') {
+      return res.status(400).json({ success: false, code: error.code, message: error.message });
     }
-    if (stockUpdated) {
-      await stockService.restoreStockState(req.body.unitId || req.body.unit, previousStock, previousAvgCost);
-    }
+    if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
     next(error);
   }
 };

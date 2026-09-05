@@ -47,10 +47,10 @@ const LoginPage = () => {
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}
       >
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '8px' }}>
             <Title level={3} style={{ marginBottom: '4px' }}>
-              ⛽ Diesel Pump
+              ⛽ Fuel Pump
             </Title>
             <Text type="secondary">Management System</Text>
           </div>

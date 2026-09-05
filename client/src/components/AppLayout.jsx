@@ -139,7 +139,7 @@ const AppLayout = () => {
       >
         <div style={{ padding: '16px', textAlign: 'center', background: colorBgContainer }}>
           <Title level={4} style={{ margin: 0, color: '#1890ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {collapsed ? '⛽' : '⛽ Diesel Pump'}
+            {collapsed ? '⛽' : '⛽ Fuel Pump'}
           </Title>
         </div>
         <Menu
@@ -170,11 +170,12 @@ const AppLayout = () => {
           </div>
         </Header>
         <Content
+          className={location.pathname === '/' ? 'dashboard-content' : undefined}
           style={{
             margin: '24px 16px',
             padding: 24,
             minHeight: 280,
-            background: colorBgContainer,
+            background: location.pathname === '/' ? '#EDF2F0' : colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
         >

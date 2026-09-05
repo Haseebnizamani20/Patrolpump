@@ -1,5 +1,6 @@
 const StockAdjustment = require('../models/StockAdjustment');
 const stockService = require('../services/stockService');
+const { runAtomic } = require('../services/transactionService');
 
 exports.getStockAdjustments = async (req, res, next) => {
   try {
@@ -29,17 +30,12 @@ exports.createStockAdjustment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Quantity must be greater than zero' });
     }
 
-    const updatedUnit = await stockService.adjustStock(unitId, type, Number(quantity));
-
-    const adjustment = new StockAdjustment({
-      unitId,
-      type,
-      quantity,
-      reason,
-      adjustedBy: req.user._id
+    const { updatedUnit, adjustment } = await runAtomic(async (session) => {
+      const unit = await stockService.adjustStock(unitId, type, Number(quantity), session);
+      const createdAdjustment = new StockAdjustment({ unitId, type, quantity, reason, adjustedBy: req.user._id });
+      await createdAdjustment.save(session ? { session } : undefined);
+      return { updatedUnit: unit, adjustment: createdAdjustment };
     });
-
-    await adjustment.save();
 
     res.status(201).json({
       success: true,

@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const Customer = require('../models/Customer');
 const ledgerService = require('../services/ledgerService');
+const { runAtomic } = require('../services/transactionService');
 
 /**
  * GET /api/payments
@@ -64,9 +65,6 @@ exports.getPayment = async (req, res, next) => {
  * For simplicity the tolerance is 0 (no overpayment), with Owner override.
  */
 exports.createPayment = async (req, res, next) => {
-  let balanceReduced = false;
-  let savedPayment = null;
-
   try {
     const { customerId, amount, mode, notes, date, ownerOverride } = req.body;
 
@@ -86,63 +84,31 @@ exports.createPayment = async (req, res, next) => {
       });
     }
 
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return res.status(404).json({ success: false, message: 'Customer not found' });
-    }
+    const { payment, updatedBalance } = await runAtomic(async (session) => {
+      const customer = await Customer.findById(customerId).session(session);
+      if (!customer) { const error = new Error('Customer not found'); error.status = 404; throw error; }
+      if (customer.type !== 'credit') { const error = new Error('Payments can only be recorded against credit customers'); error.status = 400; throw error; }
 
-    if (customer.type !== 'credit') {
-      return res.status(400).json({
-        success: false,
-        message: 'Payments can only be recorded against credit customers',
-      });
-    }
-
-    // FR-6.3: Block overpayment unless owner overrides
-    const resultingBalance = Math.round((customer.currentBalance - parsedAmount) * 100) / 100;
-    if (resultingBalance < 0) {
-      if (!(ownerOverride === true && req.user.role === 'owner')) {
-        return res.status(400).json({
-          success: false,
-          code: 'OVERPAYMENT',
-          message: `Payment of ₹${parsedAmount} would exceed the customer's balance of ₹${customer.currentBalance.toFixed(2)}`,
-          currentBalance: customer.currentBalance,
-        });
+      const resultingBalance = Math.round((customer.currentBalance - parsedAmount) * 100) / 100;
+      if (resultingBalance < 0 && !(ownerOverride === true && req.user.role === 'owner')) {
+        const error = new Error(`Payment of ₹${parsedAmount} would exceed the customer's balance of ₹${customer.currentBalance.toFixed(2)}`);
+        error.status = 400; error.code = 'OVERPAYMENT'; error.currentBalance = customer.currentBalance; throw error;
       }
-    }
 
-    // --- Reduce balance ---
-    await ledgerService.reduceBalance(customerId, parsedAmount);
-    balanceReduced = true;
-
-    // --- Save payment ---
-    const payment = await Payment.create({
-      date: date ? new Date(date) : new Date(),
-      customerId,
-      amount: parsedAmount,
-      mode,
-      notes,
-      recordedBy: req.user._id,
+      const updatedCustomer = await ledgerService.reduceBalance(customerId, parsedAmount, session);
+      const createdPayment = new Payment({ date: date ? new Date(date) : new Date(), customerId, amount: parsedAmount, mode, notes, recordedBy: req.user._id });
+      await createdPayment.save(session ? { session } : undefined);
+      return { payment: createdPayment, updatedBalance: updatedCustomer.currentBalance };
     });
-    savedPayment = payment;
-
-    // Return with updated customer balance
-    const updatedCustomer = await Customer.findById(customerId);
 
     res.status(201).json({
       success: true,
       data: payment,
-      updatedBalance: updatedCustomer.currentBalance,
+      updatedBalance,
     });
   } catch (error) {
-    // Rollback: restore balance if payment save failed
-    if (balanceReduced && !savedPayment) {
-      try {
-        await ledgerService.addToBalance(req.body.customerId, Math.round(Number(req.body.amount) * 100) / 100);
-      } catch (rollbackErr) {
-        console.error('Rollback failed:', rollbackErr.message);
-      }
-    }
+    if (error.status === 404) return res.status(404).json({ success: false, message: error.message });
+    if (error.status === 400) return res.status(400).json({ success: false, ...(error.code && { code: error.code }), ...(error.currentBalance !== undefined && { currentBalance: error.currentBalance }), message: error.message });
     next(error);
   }
 };

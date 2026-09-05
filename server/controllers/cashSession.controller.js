@@ -2,6 +2,7 @@ const CashSession = require('../models/CashSession');
 const SaleEntry = require('../models/SaleEntry');
 const Payment = require('../models/Payment');
 const Expense = require('../models/Expense');
+const SupplierPayment = require('../models/SupplierPayment');
 const auditService = require('../services/auditService');
 
 /**
@@ -18,7 +19,7 @@ const getDayBounds = (date) => {
 
 /**
  * Helper: aggregate all cash transactions for a given day.
- * Returns { totalCashSales, totalCashPaymentsReceived, totalCashExpenses, expectedCash }
+ * Returns the cash movements that determine the expected drawer balance.
  */
 const aggregateDayTotals = async (dayStart, dayEnd, openingCash) => {
   // Cash sales = cash portion of all active sales on this day
@@ -72,15 +73,22 @@ const aggregateDayTotals = async (dayStart, dayEnd, openingCash) => {
   ]);
   const totalCashExpenses = expensesAgg[0]?.totalCashExpenses || 0;
 
+  const supplierPaymentsAgg = await SupplierPayment.aggregate([
+    { $match: { date: { $gte: dayStart, $lte: dayEnd }, mode: 'cash' } },
+    { $group: { _id: null, totalCashPaidToSuppliers: { $sum: '$amount' } } },
+  ]);
+  const totalCashPaidToSuppliers = supplierPaymentsAgg[0]?.totalCashPaidToSuppliers || 0;
+
   const expectedCash =
     Math.round(
-      (openingCash + totalCashSales + totalCashPaymentsReceived - totalCashExpenses) * 100
+      (openingCash + totalCashSales + totalCashPaymentsReceived - totalCashExpenses - totalCashPaidToSuppliers) * 100
     ) / 100;
 
   return {
     totalCashSales: Math.round(totalCashSales * 100) / 100,
     totalCashPaymentsReceived: Math.round(totalCashPaymentsReceived * 100) / 100,
     totalCashExpenses: Math.round(totalCashExpenses * 100) / 100,
+    totalCashPaidToSuppliers: Math.round(totalCashPaidToSuppliers * 100) / 100,
     expectedCash,
   };
 };
@@ -244,6 +252,7 @@ exports.closeSession = async (req, res, next) => {
     session.totalCashSales = totals.totalCashSales;
     session.totalCashPaymentsReceived = totals.totalCashPaymentsReceived;
     session.totalCashExpenses = totals.totalCashExpenses;
+    session.totalCashPaidToSuppliers = totals.totalCashPaidToSuppliers;
     session.expectedCash = totals.expectedCash;
     session.closingCash = parsedClosing;
     session.shortageOrExcess = shortageOrExcess;

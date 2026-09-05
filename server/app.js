@@ -6,9 +6,25 @@ const { getDBStatus } = require('./config/db');
 const app = express();
 
 // --------------- Middleware ---------------
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:5174',  // Vite dev server when the default port is occupied
+  'http://localhost:5000',  // Same server
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+];
+
 app.use(cors({
-  origin: ['http://localhost:5174', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Electron file://, curl, Postman, same-origin)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use(cookieParser());
