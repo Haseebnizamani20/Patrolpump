@@ -91,7 +91,7 @@ exports.createPayment = async (req, res, next) => {
 
       const resultingBalance = Math.round((customer.currentBalance - parsedAmount) * 100) / 100;
       if (resultingBalance < 0 && !(ownerOverride === true && req.user.role === 'owner')) {
-        const error = new Error(`Payment of ₹${parsedAmount} would exceed the customer's balance of ₹${customer.currentBalance.toFixed(2)}`);
+        const error = new Error(`Payment of Rs ${parsedAmount} would exceed the customer's balance of Rs ${customer.currentBalance.toFixed(2)}`);
         error.status = 400; error.code = 'OVERPAYMENT'; error.currentBalance = customer.currentBalance; throw error;
       }
 

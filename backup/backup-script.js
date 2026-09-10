@@ -88,23 +88,48 @@ function cleanOldBackups(dir, keep) {
   return { kept: Math.min(entries.length, keep), deleted: toDelete.length };
 }
 
+
 function findMongodump() {
   // Try PATH first
-  const onPath = spawnSync('mongodump', ['--version'], { shell: true, stdio: 'pipe' });
-  if (onPath.status === 0) return 'mongodump';
+  const onPath = spawnSync('mongodump', ['--version'], {
+    shell: true,
+    stdio: 'pipe'
+  });
 
-  // Common Windows install locations
+  if (onPath.status === 0) {
+    return 'mongodump';
+  }
+
+  // Your MongoDB Database Tools installation
   const candidates = [
+    path.join(
+      'C:\\Users',
+      'Hasee',
+      'Downloads',
+      'mongodb-database-tools-windows-x86_64-100.18.0 (1)',
+      'mongodb-database-tools-windows-x86_64-100.18.0',
+      'bin',
+      'mongodump.exe'
+    ),
+
     'C:\\Program Files\\MongoDB\\Tools\\100\\bin\\mongodump.exe',
+    'C:\\Program Files\\MongoDB\\Server\\8.0\\bin\\mongodump.exe',
     'C:\\Program Files\\MongoDB\\Server\\7.0\\bin\\mongodump.exe',
     'C:\\Program Files\\MongoDB\\Server\\6.0\\bin\\mongodump.exe',
-    'C:\\Program Files\\MongoDB\\Server\\5.0\\bin\\mongodump.exe',
+    'C:\\Program Files\\MongoDB\\Server\\5.0\\bin\\mongodump.exe'
   ];
+
   for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+    if (fs.existsSync(p)) {
+      console.log(`Found mongodump: ${p}`);
+      return p;
+    }
   }
+
   return null;
 }
+
+
 
 // ---- Main ----
 function runBackup() {
@@ -138,18 +163,40 @@ function runBackup() {
 
   capture(`Running: mongodump --host=${host} --db=${DB_NAME} --out=<backupDir>`);
 
-  const result = spawnSync(mongodump, [
-    `--host=${host}`,
-    `--db=${DB_NAME}`,
-    `--out=${backupDir}`,
-  ], { stdio: 'inherit', shell: process.platform === 'win32' });
+const result = spawnSync(mongodump, [ `--host=${host}`, `--db=${DB_NAME}`, `--out=${backupDir}`, ], { encoding: 'utf8', shell: false, stdio: 'inherit' });
 
-  if (result.status !== 0) {
-    capture(`ERROR: mongodump exited with code ${result.status}`);
-    fs.writeFileSync(path.join(backupDir, 'BACKUP_FAILED.txt'),
-      `Backup failed at ${new Date().toISOString()}\nExit code: ${result.status}`);
-    return { success: false, error: `mongodump exit code ${result.status}`, backupDir };
-  }
+if (result.stdout) {
+  capture(`mongodump output: ${result.stdout}`);
+}
+
+if (result.stderr) {
+  capture(`mongodump error: ${result.stderr}`);
+}
+
+if (result.status !== 0) {
+  const errorMessage =
+    result.stderr ||
+    result.stdout ||
+    `mongodump exited with code ${result.status}`;
+
+  capture(`ERROR: ${errorMessage}`);
+
+  fs.writeFileSync(
+    path.join(backupDir, 'BACKUP_FAILED.txt'),
+    `Backup failed at ${new Date().toISOString()}
+
+Exit code: ${result.status}
+
+Error:
+${errorMessage}`
+  );
+
+  return {
+    success: false,
+    error: errorMessage,
+    backupDir
+  };
+}
 
   // Write metadata
   const meta = {

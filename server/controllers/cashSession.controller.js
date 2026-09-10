@@ -199,7 +199,7 @@ exports.openSession = async (req, res, next) => {
 
     await auditService.log(
       req.user, 'OPEN_DAY', 'CashSession', session._id,
-      `Opened cash session with ₹${parsedOpening} opening cash`,
+      `Opened cash session with Rs ${parsedOpening} opening cash`,
       { date: start, openingCash: parsedOpening }
     );
 
@@ -265,7 +265,7 @@ exports.closeSession = async (req, res, next) => {
 
     await auditService.log(
       req.user, 'CLOSE_DAY', 'CashSession', session._id,
-      `Closed day — expected ₹${totals.expectedCash}, actual ₹${parsedClosing}, diff ₹${shortageOrExcess}`,
+      `Closed day — expected Rs ${totals.expectedCash}, actual Rs ${parsedClosing}, diff Rs ${shortageOrExcess}`,
       { expectedCash: totals.expectedCash, closingCash: parsedClosing, shortageOrExcess }
     );
 

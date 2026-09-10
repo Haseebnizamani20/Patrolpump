@@ -26,10 +26,28 @@
   display: none;
 }
 
+.report-print-footer {
+  display: none;
+}
+
 @media print {
   @page {
-    size: A4;
+    size: A4 portrait;
     margin: 12mm;
+  }
+
+  /*
+   * Report tabs normally live inside the application's content column.  During
+   * printing they must be taken out of that column, otherwise their width is
+   * limited by the sidebar/layout and the PDF only occupies part of the page.
+   */
+  html[data-printing-report],
+  html[data-printing-report] body {
+    width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
   }
 
   html[data-printing-report] body * {
@@ -42,10 +60,16 @@
   }
 
   html[data-printing-report] .report-print-view.is-active {
-    position: absolute !important;
-    inset: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
     display: block !important;
     width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #fff !important;
     color: #111 !important;
   }
@@ -69,27 +93,55 @@
     gap: 24px;
     padding: 0 0 12px;
     margin: 0 0 18px;
-    border-bottom: 2px solid #1677ff;
+    border-bottom: 1px solid #111;
+  }
+
+  html[data-printing-report] .report-print-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  html[data-printing-report] .report-print-logo {
+    display: block;
+    width: auto;
+    max-width: 42mm;
+    height: auto;
+    max-height: 20mm;
+    object-fit: contain;
   }
 
   html[data-printing-report] .report-print-header h1 {
     margin: 0;
     font-size: 18pt;
-    color: #123b6d;
+    color: #111;
+  }
+
+  html[data-printing-report] .report-print-tagline {
+    margin: 2px 0 0;
+    color: #111;
+    font-size: 12pt;
+    font-weight: 700;
   }
 
   html[data-printing-report] .report-print-header p,
-  html[data-printing-report] .report-print-metadata span {
+  html[data-printing-report] .report-print-document span {
     display: block;
     margin: 2px 0 0;
     color: #444;
     font-size: 9pt;
   }
 
-  html[data-printing-report] .report-print-metadata {
+  html[data-printing-report] .report-print-document {
     min-width: 220px;
     text-align: right;
     font-size: 10pt;
+  }
+
+  html[data-printing-report] .report-print-document strong {
+    display: block;
+    color: #111;
+    font-size: 12pt;
   }
 
   html[data-printing-report] .ant-card {
@@ -103,8 +155,9 @@
   }
 
   html[data-printing-report] .ant-table-thead > tr > th {
-    background: #edf4fb !important;
+    background: #fff !important;
     color: #111 !important;
+    border-bottom: 1px solid #111 !important;
   }
 
   html[data-printing-report] .ant-table-row,
@@ -116,5 +169,36 @@
 
   html[data-printing-report] .ant-table-wrapper {
     overflow: visible !important;
+  }
+
+  html[data-printing-report] .ant-table table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  html[data-printing-report] .ant-table-cell {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html[data-printing-report] .ant-table-summary > tr > td {
+    border-top: 1px solid #111 !important;
+    font-weight: 700 !important;
+  }
+
+  html[data-printing-report] .report-print-footer {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 8px;
+    border-top: 1px solid #c9c9c9;
+    font-size: 8pt;
+    color: #555;
+  }
+
+  html[data-printing-report] .report-page-number::after {
+    content: counter(page);
   }
 }

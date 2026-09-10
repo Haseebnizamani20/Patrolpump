@@ -155,7 +155,7 @@ exports.getCustomerLedger = async (req, res, next) => {
       ...sales.map(s => ({
         type: 'sale',
         date: s.date,
-        description: `Sale — ${s.unitId?.name || 'Unit'} ${s.quantity}L @ ₹${s.rate}`,
+        description: `Sale — ${s.unitId?.name || 'Unit'} ${s.quantity}L @ Rs ${s.rate}`,
         debit: s.dueAmount,  // amount added to balance (customer owes more)
         credit: 0,
         ref: s._id,

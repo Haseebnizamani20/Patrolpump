@@ -6,11 +6,9 @@ import {
   DatabaseOutlined,
   TeamOutlined,
   ShopOutlined,
-  SettingOutlined,
   LogoutOutlined,
   ShoppingCartOutlined,
   DollarOutlined,
-  SlidersOutlined,
   WalletOutlined,
   FileTextOutlined,
   BankOutlined,
@@ -19,31 +17,42 @@ import {
   AuditOutlined,
   UsergroupAddOutlined,
   CloudUploadOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
+const GROUP_ROUTES = {
+  payments: ['/payments', '/supplier-payments'],
+  manage: ['/units', '/expenses', '/cash-session'],
+  admin: ['/audit-log', '/users', '/backup', '/settings'],
+};
+
+const openGroupForRoute = (pathname) =>
+  Object.entries(GROUP_ROUTES)
+    .filter(([, routes]) => routes.includes(pathname))
+    .map(([group]) => group);
+
 const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout, isOwner } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [openKeys, setOpenKeys] = useState(() => openGroupForRoute(location.pathname));
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  const activeGroupKeys = openGroupForRoute(location.pathname);
+  const visibleOpenKeys = [...new Set([...openKeys, ...activeGroupKeys])];
 
   const menuItems = [
     {
       key: '/',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
-    },
-    {
-      key: '/units',
-      icon: <DatabaseOutlined />,
-      label: 'Units/Tanks',
     },
     {
       key: '/customers',
@@ -56,34 +65,23 @@ const AppLayout = () => {
       label: 'Suppliers',
     },
     {
-      key: '/purchases',
-      icon: <ShoppingCartOutlined />,
-      label: 'Purchase Entry',
-    },
-    {
       key: '/sales',
       icon: <DollarOutlined />,
       label: 'Sale Entry',
     },
     {
-      key: '/payments',
+      key: '/purchases',
+      icon: <ShoppingCartOutlined />,
+      label: 'Purchase Entry',
+    },
+    {
+      key: 'payments',
       icon: <WalletOutlined />,
       label: 'Payments',
-    },
-    {
-      key: '/expenses',
-      icon: <FileTextOutlined />,
-      label: 'Expenses',
-    },
-    {
-      key: '/supplier-payments',
-      icon: <CreditCardOutlined />,
-      label: 'Supplier Payments',
-    },
-    {
-      key: '/cash-session',
-      icon: <BankOutlined />,
-      label: 'Cash Session',
+      children: [
+        { key: '/payments', icon: <WalletOutlined />, label: 'Customer Payments' },
+        { key: '/supplier-payments', icon: <CreditCardOutlined />, label: 'Supplier Payments' },
+      ],
     },
   ];
 
@@ -93,30 +91,30 @@ const AppLayout = () => {
       icon: <BarChartOutlined />,
       label: 'Reports',
     });
+  }
+
+  menuItems.push({
+    key: 'manage',
+    icon: <DatabaseOutlined />,
+    label: 'Manage',
+    children: [
+      { key: '/units', icon: <DatabaseOutlined />, label: 'Units/Tanks' },
+      { key: '/expenses', icon: <FileTextOutlined />, label: 'Expenses' },
+      { key: '/cash-session', icon: <BankOutlined />, label: 'Cash Session' },
+    ],
+  });
+
+  if (isOwner) {
     menuItems.push({
-      key: '/audit-log',
+      key: 'admin',
       icon: <AuditOutlined />,
-      label: 'Audit Log',
-    });
-    menuItems.push({
-      key: '/users',
-      icon: <UsergroupAddOutlined />,
-      label: 'Users',
-    });
-    menuItems.push({
-      key: '/backup',
-      icon: <CloudUploadOutlined />,
-      label: 'Backup',
-    });
-    menuItems.push({
-      key: '/stock-adjustments',
-      icon: <SlidersOutlined />,
-      label: 'Stock Adjustments',
-    });
-    menuItems.push({
-      key: '/setup',
-      icon: <SettingOutlined />,
-      label: 'Setup',
+      label: 'Admin',
+      children: [
+        { key: '/audit-log', icon: <AuditOutlined />, label: 'Audit Log' },
+        { key: '/users', icon: <UsergroupAddOutlined />, label: 'Users' },
+        { key: '/backup', icon: <CloudUploadOutlined />, label: 'Backup' },
+        { key: '/settings', icon: <SettingOutlined />, label: 'Business Profile' },
+      ],
     });
   }
 
@@ -146,8 +144,10 @@ const AppLayout = () => {
           theme="light"
           mode="inline"
           selectedKeys={[location.pathname]}
+          openKeys={visibleOpenKeys}
           items={menuItems}
           onClick={handleMenuClick}
+          onOpenChange={setOpenKeys}
         />
       </Sider>
       <Layout>

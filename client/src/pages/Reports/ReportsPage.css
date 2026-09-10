@@ -1,0 +1,195 @@
+.reports-page .ant-statistic-content,
+.reports-page .ant-table-cell,
+.reports-page .ant-descriptions-item-content {
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-page .ant-statistic-content {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(16px, 2vw, 24px);
+}
+
+.reports-page .ant-statistic-content-value,
+.reports-page .ant-statistic-content-prefix,
+.reports-page .ant-statistic-content-suffix {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reports-page .ant-table-wrapper {
+  overflow-x: auto;
+}
+
+.reports-page .ant-table-tbody > tr:nth-child(even) > td {
+  background: #fafafa;
+}
+
+.reports-page .ant-table-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reports-page .ant-card {
+  height: 100%;
+}
+
+.report-summary-cards,
+.supplier-dues-balance-cards {
+  margin-bottom: 20px;
+}
+
+.report-data-table .ant-table-thead > tr > th,
+.supplier-dues-table .ant-table-thead > tr > th {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.report-data-table .ant-table-tbody > tr > td,
+.supplier-dues-table .ant-table-tbody > tr > td {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.daily-cash-session {
+  margin-bottom: 20px;
+  border-color: #d9e2ef;
+  border-left: 4px solid #1677ff;
+  background: #f8fbff;
+}
+
+.daily-cash-session .ant-card-head {
+  color: #1677ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.reports-page .ant-divider {
+  margin: 24px 0 14px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-ledger-billed-to {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  border: 1px solid #d9e2ef;
+  border-left: 4px solid #1677ff;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.customer-ledger-billed-to-label {
+  margin-bottom: 12px;
+  color: #1677ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.customer-ledger-details .ant-descriptions-item-label {
+  color: #667085;
+  font-size: 12px;
+}
+
+.customer-ledger-details .ant-descriptions-item-content {
+  color: #101828;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.customer-ledger-balance-cards {
+  margin-bottom: 20px;
+}
+
+.customer-dues-controls {
+  margin-bottom: 20px !important;
+}
+
+.customer-dues-balance-cards {
+  margin-bottom: 20px;
+}
+
+.supplier-dues-controls {
+  margin-bottom: 20px !important;
+}
+
+.customer-dues-table .ant-table-thead > tr > th {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.customer-dues-table .ant-table-tbody > tr > td {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.customer-dues-table .ant-table-tbody > tr.customer-dues-over-limit > td {
+  background: #fff7f6;
+}
+
+.customer-dues-table .ant-table-tbody > tr.customer-dues-over-limit > td:first-child {
+  border-left: 4px solid #cf1322;
+  color: #a8071a;
+  font-weight: 700;
+}
+
+@media print {
+  html[data-printing-report] .reports-page .ant-divider {
+    margin: 14px 0 8px;
+    color: #111;
+  }
+
+  html[data-printing-report] .reports-page .ant-card-body {
+    padding: 12px;
+  }
+
+  html[data-printing-report] .customer-ledger-billed-to {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-color: #999;
+    border-left-color: #111;
+    border-radius: 0;
+    background: #fff;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  html[data-printing-report] .customer-ledger-billed-to-label {
+    margin-bottom: 8px;
+    color: #111;
+  }
+
+  html[data-printing-report] .customer-ledger-balance-cards {
+    margin-bottom: 14px;
+  }
+
+  html[data-printing-report] .customer-ledger-balance-cards .ant-card-body {
+    padding: 12px;
+  }
+
+  /* Customer Dues exports are intentionally limited to the report table and totals. */
+  html[data-printing-report="custDues"] .report-print-header,
+  html[data-printing-report="custDues"] .report-print-footer,
+  html[data-printing-report="custDues"] .customer-dues-balance-cards {
+    display: none !important;
+  }
+
+  html[data-printing-report="custDues"] .customer-dues-table .ant-table-tbody > tr.customer-dues-over-limit > td {
+    background: #fff !important;
+  }
+
+  html[data-printing-report="custDues"] .customer-dues-table .ant-table-tbody > tr.customer-dues-over-limit > td:first-child {
+    border-left-color: #111 !important;
+  }
+}

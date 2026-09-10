@@ -20,6 +20,7 @@ import UsersPage from './pages/Users/UsersPage';
 import BackupPage from './pages/Backup/BackupPage';
 import SetupPage from './pages/Setup/SetupPage';
 import StockAdjustmentPage from './pages/Stock/StockAdjustmentPage';
+import BusinessProfilePage from './pages/Settings/BusinessProfilePage';
 import './App.css';
 
 const AppRoutes = () => {
@@ -61,6 +62,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute requiredRole="owner">
               <BackupPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute requiredRole="owner">
+              <BusinessProfilePage />
             </ProtectedRoute>
           }
         />

@@ -36,7 +36,15 @@ const PurchasePage = () => {
   const paymentStatus = Form.useWatch('paymentStatus', form);
   const quantity = Form.useWatch('quantity', form);
   const rate = Form.useWatch('rate', form);
+  const amountPaid = Form.useWatch('amountPaid', form);
   const selectedUnitId = Form.useWatch('unit', form);
+  const totalAmount = Number(quantity || 0) * Number(rate || 0);
+  const paidAmount = paymentStatus === 'Paid'
+    ? totalAmount
+    : paymentStatus === 'Pending'
+      ? 0
+      : Number(amountPaid || 0);
+  const balanceDue = totalAmount - paidAmount;
   
   const fetchPurchases = async () => {
     setLoading(true);
@@ -307,12 +315,35 @@ const PurchasePage = () => {
           {paymentStatus === 'Partial' && (
             <Form.Item
               name="amountPaid"
-              label="Amount Paid (Rs)"
+              label="Paid Amount (Rs)"
               rules={[{ required: true, message: 'Please enter amount paid' }]}
             >
-              <InputNumber style={{ width: '100%' }} min={0.01} max={form.getFieldValue('amount')} />
+              <InputNumber style={{ width: '100%' }} min={0.01} max={totalAmount} />
             </Form.Item>
           )}
+
+          <div
+            aria-live="polite"
+            style={{
+              display: 'flex',
+              gap: 16,
+              marginBottom: 24,
+              padding: '14px 16px',
+              border: '1px solid #d9e2ef',
+              borderLeft: '4px solid #1677ff',
+              borderRadius: 8,
+              background: '#f8fbff',
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#667085', fontSize: 12, marginBottom: 4 }}>Paid Amount</div>
+              <strong style={{ color: '#101828' }}>Rs {paidAmount.toFixed(2)}</strong>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#667085', fontSize: 12, marginBottom: 4 }}>Balance Due</div>
+              <strong style={{ color: balanceDue > 0 ? '#cf1322' : '#389e0d' }}>Rs {balanceDue.toFixed(2)}</strong>
+            </div>
+          </div>
 
           <Form.Item
             name="notes"

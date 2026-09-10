@@ -103,7 +103,7 @@ exports.createPurchase = async (req, res, next) => {
 
       await auditService.log(
         req.user, 'CREATE', 'Purchase', createdPurchase._id,
-        `Purchase: ${normalizedQuantity}L @ ₹${normalizedRate} from supplier — ₹${amount}`,
+        `Purchase: ${normalizedQuantity}L @ Rs ${normalizedRate} from supplier — Rs ${amount}`,
         { supplierId, unitId, quantity: normalizedQuantity, rate: normalizedRate, amount, paymentStatus }, session
       );
       return createdPurchase;

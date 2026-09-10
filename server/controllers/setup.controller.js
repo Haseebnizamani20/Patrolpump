@@ -54,3 +54,39 @@ exports.saveOpeningBalances = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getBusinessProfile = async (req, res, next) => {
+  try {
+    const profile = await Settings.findOne({ key: 'businessProfile' });
+    res.json({
+      success: true,
+      data: {
+        name: profile?.value?.name || '',
+        logo: profile?.value?.logo || '',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.saveBusinessProfile = async (req, res, next) => {
+  try {
+    const { name = '', logo = '' } = req.body;
+    const normalizedName = String(name).trim().slice(0, 120);
+
+    if (logo && (!String(logo).startsWith('data:image/') || String(logo).length > 2_100_000)) {
+      return res.status(400).json({ success: false, message: 'Logo must be a PNG, JPG, or SVG image smaller than 1.5 MB.' });
+    }
+
+    await Settings.findOneAndUpdate(
+      { key: 'businessProfile' },
+      { key: 'businessProfile', value: { name: normalizedName, logo } },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true, data: { name: normalizedName, logo } });
+  } catch (error) {
+    next(error);
+  }
+};

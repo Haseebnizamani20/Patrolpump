@@ -90,7 +90,7 @@ exports.createSale = async (req, res, next) => {
       await createdSale.save(session ? { session } : undefined);
       await auditService.log(
         req.user, 'CREATE', 'Sale', createdSale._id,
-        `Sale: ${quantity}L @ ₹${rate} = ₹${amount} (${paymentType})`,
+        `Sale: ${quantity}L @ Rs ${rate} = Rs ${amount} (${paymentType})`,
         { customerId, unitId, quantity, rate, amount, paymentType }, session
       );
       return {
@@ -149,7 +149,7 @@ exports.voidSale = async (req, res, next) => {
       saleToVoid.status = 'voided'; saleToVoid.voidedAt = new Date(); saleToVoid.voidedBy = req.user._id; saleToVoid.voidReason = voidReason;
       await saleToVoid.save(session ? { session } : undefined);
       await auditService.log(req.user, 'VOID', 'Sale', saleToVoid._id,
-        `Voided sale ₹${saleToVoid.amount} — Reason: ${voidReason}`,
+        `Voided sale Rs ${saleToVoid.amount} — Reason: ${voidReason}`,
         { voidReason, quantity: saleToVoid.quantity, amount: saleToVoid.amount }, session);
       return saleToVoid;
     });

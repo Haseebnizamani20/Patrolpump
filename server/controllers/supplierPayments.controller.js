@@ -79,7 +79,7 @@ exports.createSupplierPayment = async (req, res, next) => {
 
       const resultingPayable = Math.round((supplier.outstandingPayable - parsedAmount) * 100) / 100;
       if (resultingPayable < 0 && !(ownerOverride === true && req.user.role === 'owner')) {
-        const error = new Error(`Payment of ₹${parsedAmount} exceeds outstanding payable of ₹${supplier.outstandingPayable.toFixed(2)}`);
+        const error = new Error(`Payment of Rs ${parsedAmount} exceeds outstanding payable of Rs ${supplier.outstandingPayable.toFixed(2)}`);
         error.status = 400; error.code = 'OVERPAYMENT'; error.outstandingPayable = supplier.outstandingPayable; throw error;
       }
       supplier.outstandingPayable = Math.max(0, resultingPayable);
@@ -87,7 +87,7 @@ exports.createSupplierPayment = async (req, res, next) => {
       const createdPayment = new SupplierPayment({ date: date ? new Date(date) : new Date(), supplierId, amount: parsedAmount, mode, referenceNo, notes, recordedBy: req.user._id });
       await createdPayment.save(session ? { session } : undefined);
       await auditService.log(req.user, 'CREATE', 'SupplierPayment', createdPayment._id,
-        `Paid ₹${parsedAmount} to ${supplier.name} via ${mode}`,
+        `Paid Rs ${parsedAmount} to ${supplier.name} via ${mode}`,
         { supplierId, amount: parsedAmount, mode, newPayable: supplier.outstandingPayable }, session);
       return { payment: createdPayment, updatedPayable: supplier.outstandingPayable };
     });
