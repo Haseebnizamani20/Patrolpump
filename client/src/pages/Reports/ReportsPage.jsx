@@ -65,6 +65,13 @@ const ReportPrintView = ({ reportId, title, type, active, children, businessProf
 
   return (
     <section className={`report-print-view${active ? ' is-active' : ''}`} data-report-id={reportId}>
+      <div className="report-screen-branding" aria-label={`${businessName} report branding`}>
+        {logo && <img src={logo} alt={`${businessName} logo`} className="report-screen-logo" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+        <div>
+          <strong>{businessName}</strong>
+          <span>{title}</span>
+        </div>
+      </div>
       <header className="report-print-header">
         <div className="report-print-brand">
           {logo && <img src={logo} alt="Business logo" className="report-print-logo" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
