@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// VITE_API_BASE_URL is set by Vercel for the hosted frontend. The local value
+// keeps the Electron/development workflow working without extra configuration.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api')
+  .replace(/\/$/, '');
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
