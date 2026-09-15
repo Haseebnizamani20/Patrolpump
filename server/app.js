@@ -13,6 +13,7 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   'https://patrolpump-9cfwzf03u-haseebs-projects-afd78c25.vercel.app',
+  'https://patrolpump.vercel.app',
   ...(process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
